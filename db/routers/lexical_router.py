@@ -4,6 +4,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 
 from db.database import SessionLocal
+from db.special_queries.pronunciation_best import get_best_pronunciation_user
 
 router = APIRouter()
 
@@ -65,3 +66,7 @@ def create_lexical(lexical: LexicalBase, db: db_dependency):
     return db_lexical
 
 
+
+@router.get("/lexical/best")
+def get_best_fluency(db: db_dependency):
+    return get_best_pronunciation_user(db)

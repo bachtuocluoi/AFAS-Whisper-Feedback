@@ -8,13 +8,11 @@ def get_most_fluent_user(db: Session):
             db.models.Fluency.speed_rate,
             db.models.Fluency.pause_ratio
         )
-        .join(
-            db.models.Fluency,
-            db.models.Fluency.submit_id == db.models.Submit.id
-        )
+        .join(db.models.Fluency, db.models.Fluency.submit_id == db.models.Submit.id)
         .order_by(
-            db.models.Fluency.pause_ratio.asc(),
-            db.models.Fluency.speed_rate.desc()
+            db.models.Fluency.pause_ratio.asc(),   # ít pause nhất
+            db.models.Fluency.speed_rate.desc()    # nói đều + nhanh
         )
         .first()
     )
+

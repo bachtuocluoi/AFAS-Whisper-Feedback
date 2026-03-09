@@ -10,13 +10,10 @@ def get_best_lexical_user(db: Session):
             db.models.Lexical.B2,
             db.models.Lexical.C1
         )
-        .join(
-            db.models.Lexical,
-            db.models.Lexical.submit_id == db.models.Submit.id
-        )
+        .join(db.models.Lexical, db.models.Lexical.submit_id == db.models.Submit.id)
         .order_by(
-            (db.models.Lexical.B2 + db.models.Lexical.C1).desc(),
-            db.models.Lexical.mttr.desc()
+            (db.models.Lexical.B2 + db.models.Lexical.C1).desc(),  # độ khó từ vựng
+            db.models.Lexical.mttr.desc()                           # ổn định lexical
         )
         .first()
     )

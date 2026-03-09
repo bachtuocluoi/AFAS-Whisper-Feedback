@@ -4,6 +4,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 
 from db.database import SessionLocal
+from db.special_queries.fluency_best import get_most_fluent_user
 
 router = APIRouter()
 
@@ -40,8 +41,6 @@ def get_fluency(
 
 
 
-
-
 @router.post("/fluency/")
 def create_fluency(fluency: FluencyBase, db: db_dependency):
     db_fluency = db.models.Fluency(
@@ -56,3 +55,7 @@ def create_fluency(fluency: FluencyBase, db: db_dependency):
 
     return db_fluency
 
+
+@router.get("/fluency/best")
+def get_best_fluency(db: db_dependency):
+    return get_most_fluent_user(db)

@@ -4,6 +4,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 
 from db.database import SessionLocal
+from db.special_queries.pronunciation_best import get_best_pronunciation_user
 
 router = APIRouter()
 
@@ -59,3 +60,8 @@ def create_pronunciation(pronunciation: PronunciationBase, db: db_dependency):
     db.refresh(db_pronunciation)
 
     return db_pronunciation
+
+
+@router.get("/pronunciation/best")
+def get_best_fluency(db: db_dependency):
+    return get_best_pronunciation_user(db)
