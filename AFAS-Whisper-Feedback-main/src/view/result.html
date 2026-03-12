@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Speaking Result</title>
+</head>
+
+<body>
+
+<h2>Speaking Analysis Result</h2>
+
+<h3>Fluency</h3>
+<div id="fluency"></div>
+
+<h3>Lexical</h3>
+<div id="lexical"></div>
+
+<h3>Pronunciation</h3>
+<div id="pronunciation"></div>
+
+<h3>Feedback</h3>
+<div id="feedback"></div>
+
+<script>
+
+async function loadResult(){
+
+    const submit_id = localStorage.getItem("submit_id");
+
+    // fluency
+    let f = await fetch(`http://127.0.0.1:8001/fluency/${submit_id}`);
+    let fluency = await f.json();
+
+    document.getElementById("fluency").innerHTML =
+        `Speed Rate: ${fluency.speed_rate} <br>
+         Pause Ratio: ${fluency.pause_ratio}`;
+
+
+    // lexical
+    let l = await fetch(`http://127.0.0.1:8001/lexical/${submit_id}`);
+    let lexical = await l.json();
+
+    document.getElementById("lexical").innerHTML =
+        `TTR: ${lexical.ttr} <br>
+         MTTR: ${lexical.mttr}`;
+
+
+    // pronunciation
+    let p = await fetch(`http://127.0.0.1:8001/pronunciation/${submit_id}`);
+    let pro = await p.json();
+
+    document.getElementById("pronunciation").innerHTML =
+        `85-95%: ${pro.score_85_95} <br>
+         95-100%: ${pro.score_95_100}`;
+
+
+    // feedback
+    let fb = await fetch(`http://127.0.0.1:8001/feedback/${submit_id}`);
+    let feedback = await fb.json();
+
+    document.getElementById("feedback").innerHTML =
+        feedback.feedback;
+
+}
+
+loadResult()
+
+</script>
+
+</body>
+</html>

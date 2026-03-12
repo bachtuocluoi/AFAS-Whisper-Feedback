@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Upload Audio</title>
+</head>
+
+<body>
+
+<h2>Upload Audio for Speaking Analysis</h2>
+
+<input type="file" id="audioFile">
+<button onclick="uploadAudio()">Submit</button>
+
+<script>
+
+async function uploadAudio(){
+
+    const fileInput = document.getElementById("audioFile");
+    const file = fileInput.files[0];
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("http://127.0.0.1:8001/asr/transcribe", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+
+    // lưu submit_id
+    localStorage.setItem("submit_id", data.submit_id);
+
+    window.location.href = "/view/result.html";
+}
+
+</script>
+
+</body>
+</html>

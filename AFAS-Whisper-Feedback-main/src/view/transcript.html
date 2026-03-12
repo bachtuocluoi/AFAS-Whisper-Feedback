@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Transcript</title>
+</head>
+
+<body>
+
+<h2>Transcript</h2>
+
+<table border="1">
+<thead>
+<tr>
+<th>Word</th>
+<th>Probability</th>
+<th>Start</th>
+<th>End</th>
+</tr>
+</thead>
+
+<tbody id="table"></tbody>
+
+</table>
+
+<script>
+
+async function loadTranscript(){
+
+    const submit_id = localStorage.getItem("submit_id");
+
+    const response = await fetch(`http://127.0.0.1:8001/transcript/${submit_id}`);
+    const data = await response.json();
+
+    const table = document.getElementById("table");
+
+    data.forEach(word => {
+
+        table.innerHTML += `
+        <tr>
+            <td>${word.word}</td>
+            <td>${word.prob}</td>
+            <td>${word.start}</td>
+            <td>${word.end}</td>
+        </tr>
+        `
+    });
+
+}
+
+loadTranscript()
+
+</script>
+
+</body>
+</html>
