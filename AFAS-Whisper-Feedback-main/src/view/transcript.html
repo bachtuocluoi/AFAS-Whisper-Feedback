@@ -29,7 +29,7 @@ async function loadTranscript(){
 
     const submit_id = localStorage.getItem("submit_id");
 
-    const response = await fetch(`http://127.0.0.1:8001/transcript/${submit_id}`);
+    const response = await fetch(`http://127.0.0.1:8000/transcript/${submit_id}`);
     const data = await response.json();
 
     const table = document.getElementById("table");

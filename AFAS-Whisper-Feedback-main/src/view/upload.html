@@ -21,7 +21,7 @@ async function uploadAudio(){
     let formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch("http://127.0.0.1:8001/asr/transcribe", {
+    const response = await fetch("http://127.0.0.1:8000/asr/transcribe", {
         method: "POST",
         body: formData
     });

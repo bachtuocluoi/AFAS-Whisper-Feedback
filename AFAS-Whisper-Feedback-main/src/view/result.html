@@ -28,7 +28,7 @@ async function loadResult(){
     const submit_id = localStorage.getItem("submit_id");
 
     // fluency
-    let f = await fetch(`http://127.0.0.1:8001/fluency/${submit_id}`);
+    let f = await fetch(`http://127.0.0.1:8000/fluency/${submit_id}`);
     let fluency = await f.json();
 
     document.getElementById("fluency").innerHTML =
@@ -37,7 +37,7 @@ async function loadResult(){
 
 
     // lexical
-    let l = await fetch(`http://127.0.0.1:8001/lexical/${submit_id}`);
+    let l = await fetch(`http://127.0.0.1:8000/lexical/${submit_id}`);
     let lexical = await l.json();
 
     document.getElementById("lexical").innerHTML =
@@ -46,7 +46,7 @@ async function loadResult(){
 
 
     // pronunciation
-    let p = await fetch(`http://127.0.0.1:8001/pronunciation/${submit_id}`);
+    let p = await fetch(`http://127.0.0.1:8000/pronunciation/${submit_id}`);
     let pro = await p.json();
 
     document.getElementById("pronunciation").innerHTML =
@@ -55,7 +55,7 @@ async function loadResult(){
 
 
     // feedback
-    let fb = await fetch(`http://127.0.0.1:8001/feedback/${submit_id}`);
+    let fb = await fetch(`http://127.0.0.1:8000/feedback/${submit_id}`);
     let feedback = await fb.json();
 
     document.getElementById("feedback").innerHTML =
