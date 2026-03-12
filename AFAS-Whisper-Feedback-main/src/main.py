@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.database import engine, Base
 from src.core import models
 from src.api.routes import api_router
+from fastapi.staticfiles import StaticFiles
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -57,6 +58,9 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
+# Mount static HTML files
+app.mount("/view", StaticFiles(directory="src/view"), name="view")
+
 
 
 @app.get("/")
