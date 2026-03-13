@@ -9,7 +9,7 @@ import requests
 import json
 from typing import Dict, Any
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 API_BASE = f"{BASE_URL}/api/v1"
 
 
@@ -31,6 +31,48 @@ def test_root():
     print(f"Response: {response.json()}")
     assert response.status_code == 200
     print("✅ Root endpoint passed")
+
+
+def test_create_submit():
+
+    print("\n=== Testing Create Submit ===")
+
+    submit_data = {
+        "user_id": 11,
+        "audio_path": "C:\\Users\\ADMIN\\Downloads\\11.mp3",
+        "asr_type": "whisper"
+    }
+
+
+    response = requests.post(
+        f"{API_BASE}/submit/",
+        json=submit_data
+    )
+
+    print(f"Status Code: {response.status_code}")
+    if response.status_code == 201:
+        print(f"Response: {json.dumps(response.json(), indent=2)}")
+        print("✅ Create submit passed")
+    else:
+        print(f"Error: {response.text}")
+
+
+
+def test_get_submit(submit_id: int = 1):
+    """Test getting submits for a submission."""
+    print("\n=== Testing Get Submits ===")
+    
+    response = requests.get(f"{API_BASE}/submit/{submit_id}")
+    
+    print(f"Status Code: {response.status_code}")
+    if response.status_code == 200:
+        transcripts = response.json()
+        print(f"Found {len(transcripts)} submit entries")
+        if transcripts:
+            print(f"First entry: {json.dumps(transcripts[0], indent=2)}")
+        print("✅ Get submit passed")
+    else:
+        print(f"Error: {response.text}")
 
 
 def test_create_transcript():
@@ -234,6 +276,10 @@ def run_all_tests():
         # Basic endpoints
         test_health_check()
         test_root()
+
+        #Submit endpoints
+        test_create_submit()
+        test_get_submit()
         
         # Transcript endpoints
         test_create_transcript()

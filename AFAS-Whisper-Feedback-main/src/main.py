@@ -58,6 +58,7 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
+
 # Mount static HTML files
 app.mount("/view", StaticFiles(directory="src/view"), name="view")
 

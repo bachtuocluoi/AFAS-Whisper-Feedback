@@ -7,7 +7,7 @@ to convert audio files to text with word-level timestamps and confidence scores.
 
 import whisper
 import pandas as pd
-from typing import Dict, List, Tuple
+from typing import Dict
 from config.settings import settings
 
 
