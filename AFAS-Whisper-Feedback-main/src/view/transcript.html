@@ -1,91 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Transcript</title>
+<meta charset="UTF-8" />
+<title>Transcript</title>
 </head>
 <body>
 
-  <h2>Transcript</h2>
+<h2>Transcript</h2>
 
-  <table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-      <tr>
-        <th>Word</th>
-        <th>Probability</th>
-        <th>Start</th>
-        <th>End</th>
-      </tr>
-    </thead>
-    <tbody id="table"></tbody>
-  </table>
+<table border="1" cellpadding="8" cellspacing="0">
+<thead>
+<tr>
+<th>Word</th>
+<th>Probability</th>
+<th>Start</th>
+<th>End</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
 
-  <br>
-  <button onclick="goToResult()">Go to Result</button>
-  <button onclick="goBackUpload()">Upload Another Audio</button>
+<br>
 
-  <script>
-    async function loadTranscript() {
-      const submit_id = localStorage.getItem("submit_id");
+<button onclick="goToResult()">Go to Result</button>
+<button onclick="goBackUpload()">Upload Another Audio</button>
 
-      if (!submit_id) {
-        alert("No submit_id found. Please upload audio first.");
-        window.location.href = "/view/upload.html";
-        return;
-      }
+<script>
 
-      try {
-        const response = await fetch(`http://127.0.0.1:8001/api/v1/transcripts/${submit_id}`);
+function loadTranscript(){
 
-        if (!response.ok) {
-          const raw = await response.text();
-          alert("Failed to load transcript: " + raw);
-          return;
-        }
+  const submit_id = localStorage.getItem("submit_id");
 
-        const data = await response.json();
+  if (!submit_id) {
+    alert("No submit_id found.");
+    window.location.href="/view/upload.html";
+    return;
+  }
 
-        const table = document.getElementById("table");
-        table.innerHTML = "";
+  fetch("http://127.0.0.1:8002/api/v1/transcripts/" + submit_id)
 
-        if (!data || data.length === 0) {
-          table.innerHTML = `
-            <tr>
-              <td colspan="4">No transcript data found.</td>
-            </tr>
-          `;
-          return;
-        }
+  .then(function(response){
 
-        data.forEach(word => {
-          table.innerHTML += `
-            <tr>
-              <td>${word.word}</td>
-              <td>${word.prob}</td>
-              <td>${word.start}</td>
-              <td>${word.end}</td>
-            </tr>
-          `;
-        });
-
-      } catch (error) {
-        console.error(error);
-        alert("Error loading transcript.");
-      }
+    if (!response.ok) {
+      throw new Error("Failed to load transcript");
     }
 
-    function goToResult() {
-      window.location.href = "/view/result.html";
+    return response.json();
+
+  })
+
+  .then(function(data){
+
+    const table = document.getElementById("table");
+    table.innerHTML="";
+
+    if(!data || data.length===0){
+
+      table.innerHTML =
+      "<tr><td colspan='4'>No transcript data</td></tr>";
+
+      return;
     }
 
-    function goBackUpload() {
-      localStorage.removeItem("submit_id");
-      localStorage.removeItem("audio_path");
-      window.location.href = "/view/upload.html";
-    }
+    data.forEach(function(word){
 
-    loadTranscript();
-  </script>
+      table.innerHTML +=
+      "<tr>"+
+      "<td>"+word.word+"</td>"+
+      "<td>"+word.prob+"</td>"+
+      "<td>"+word.start+"</td>"+
+      "<td>"+word.end+"</td>"+
+      "</tr>";
+
+    });
+
+  })
+
+  .catch(function(error){
+
+    alert("Error loading transcript");
+
+  });
+
+}
+
+function goToResult(){
+
+  window.location.href="/view/result.html";
+
+}
+
+function goBackUpload(){
+
+  localStorage.removeItem("submit_id");
+  window.location.href="/view/upload.html";
+
+}
+
+loadTranscript();
+
+</script>
 
 </body>
 </html>

@@ -49,12 +49,38 @@ def load_cefr_dict(cefr_dict_path: str = None) -> Dict[str, str]:
         >>> cefr_dict = load_cefr_dict("data/oxford_cerf.csv")
         >>> print(cefr_dict.get("hello"))  # 'A1'
     """
+    import pandas as pd
+import re
+from pathlib import Path
+from typing import Dict, Optional
+from config.settings import settings
+
+
+def clean_word(word: str) -> str:
+    return re.sub(r"[^a-zA-Z']", "", word).lower()
+
+
+def load_cefr_dict(cefr_dict_path: str = None) -> Dict[str, str]:
+    """
+    Load CEFR level dictionary from CSV file.
+    """
+
     if cefr_dict_path is None:
         cefr_dict_path = settings.cefr_dict_path
-    
-    df = pd.read_csv(cefr_dict_path)
-    df['word_clean'] = df['word'].str.lower().str.strip()
-    return dict(zip(df['word_clean'], df['level']))
+
+    csv_path = Path(cefr_dict_path)
+
+    if not csv_path.is_absolute():
+        project_root = Path(__file__).resolve().parents[2]
+        csv_path = project_root / csv_path
+
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CEFR file not found: {csv_path}")
+
+    df = pd.read_csv(csv_path)
+    df["word_clean"] = df["word"].astype(str).str.lower().str.strip()
+
+    return dict(zip(df["word_clean"], df["level"]))
 
 
 def cefr_to_score(level: Optional[str]) -> int:
@@ -101,7 +127,7 @@ def get_proportion(index: int, result_df: pd.DataFrame) -> float:
         return 0.0
 
 
-def compute_lexical_cefr_metrics(transcript_csv_path: str) -> Dict[str, float]:
+def compute_lexical_cefr_metrics(asr_result: dict) -> Dict[str, float]:
     """
     Compute CEFR level distribution from transcript CSV.
     
@@ -128,47 +154,72 @@ def compute_lexical_cefr_metrics(transcript_csv_path: str) -> Dict[str, float]:
         >>> print(f"A1 words: {result['A1']:.1f}%")
         >>> print(f"C1 words: {result['C1']:.1f}%")
     """
-    asr_df = pd.read_csv(transcript_csv_path)
     cefr_dict = load_cefr_dict()
-    
+
     words = []
+
+    for seg in asr_result.get("segments", []):
+        for w in seg.get("words", []):
+            word = w.get("word", "").strip()
+            if word:
+                words.append(word)
+
+    if not words:
+        return {
+            "a1": 0.0,
+            "a2": 0.0,
+            "b1": 0.0,
+            "b2": 0.0,
+            "c1": 0.0
+        }
+
+    cleaned_words = []
     levels = []
     scores = []
-    
-    # Map each word to its CEFR level
-    for w in asr_df["word"]:
+
+    for w in words:
         w_clean = clean_word(w)
         level = cefr_dict.get(w_clean, None)
         score = cefr_to_score(level)
-        
-        words.append(w_clean)
+
+        cleaned_words.append(w_clean)
         levels.append(level)
         scores.append(score)
-    
-    # Create result DataFrame
-    result_df = asr_df.copy()
-    result_df["word_clean"] = words
-    result_df["cefr_level"] = levels
-    result_df["lexical_score"] = scores
-    
-    # Group by CEFR level and count
-    result_df = result_df.groupby(['cefr_level']).agg({'lexical_score': 'count'}).reset_index()
-    
-    # Calculate proportions (percentages)
-    total_words = result_df['lexical_score'].sum()
+
+    result_df = pd.DataFrame({
+        "word_clean": cleaned_words,
+        "cefr_level": levels,
+        "lexical_score": scores
+    })
+
+    grouped = result_df.groupby("cefr_level").agg({"lexical_score": "count"}).reset_index()
+
+    total_words = grouped["lexical_score"].sum()
+
     if total_words > 0:
-        result_df['proportion'] = result_df['lexical_score'] / total_words * 100
+        grouped["proportion"] = grouped["lexical_score"] / total_words * 100
     else:
-        result_df['proportion'] = 0.0
-    
-    # Return proportions for each level
-    # Note: We assume levels are ordered A1, A2, B1, B2, C1 in the grouped result
-    return {
-        "file": transcript_csv_path,
-        "A1": get_proportion(0, result_df),
-        "A2": get_proportion(1, result_df),
-        "B1": get_proportion(2, result_df),
-        "B2": get_proportion(3, result_df),
-        "C1": get_proportion(4, result_df),
+        grouped["proportion"] = 0.0
+
+    level_map = {
+        "A1": 0.0,
+        "A2": 0.0,
+        "B1": 0.0,
+        "B2": 0.0,
+        "C1": 0.0
     }
 
+    for _, row in grouped.iterrows():
+        level = row["cefr_level"]
+        proportion = float(row["proportion"])
+
+        if level in level_map:
+            level_map[level] = round(proportion, 2)
+
+    return {
+        "a1": level_map["A1"],
+        "a2": level_map["A2"],
+        "b1": level_map["B1"],
+        "b2": level_map["B2"],
+        "c1": level_map["C1"]
+    }

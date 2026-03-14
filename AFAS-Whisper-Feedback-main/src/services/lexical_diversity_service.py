@@ -113,7 +113,7 @@ def compute_msttr(
     return float(sum(ttrs) / len(ttrs))
 
 
-def compute_lexical_diversity_metrics(transcript_csv_path: str) -> Dict[str, float]:
+def compute_lexical_diversity_metrics(asr_result: dict) -> Dict[str, float]:
     """
     Compute lexical diversity metrics from transcript CSV.
     
@@ -140,16 +140,28 @@ def compute_lexical_diversity_metrics(transcript_csv_path: str) -> Dict[str, flo
         >>> print(f"TTR: {result['TTR']:.3f}")
         >>> print(f"MSTTR: {result['MSTTR']:.3f}")
     """
-    df = pd.read_csv(transcript_csv_path)
-    raw_words = list(df['word'])
-    
+    raw_words = []
+
+    for seg in asr_result.get("segments", []):
+        for w in seg.get("words", []):
+            word = w.get("word", "").strip()
+            if word:
+                raw_words.append(word)
+
     tokens = tokenize(raw_words)
-    
+
+    if not tokens:
+        return {
+            "unique_types": 0,
+            "total_tokens": 0,
+            "ttr": 0.0,
+            "mttr": 0.0
+        }
+
     return {
-        "file": transcript_csv_path,
         "unique_types": len(set(tokens)),
         "total_tokens": len(tokens),
-        "TTR": compute_ttr(tokens),
-        "MSTTR": compute_msttr(tokens, segment_size=settings.msttr_segment_size),
+        "ttr": round(compute_ttr(tokens), 4),
+        "mttr": round(compute_msttr(tokens, segment_size=settings.msttr_segment_size), 4),
     }
 

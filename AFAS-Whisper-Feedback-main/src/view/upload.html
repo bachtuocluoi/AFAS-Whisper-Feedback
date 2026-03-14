@@ -6,75 +6,87 @@
 </head>
 <body>
 
-  <h2>Upload Audio for Speaking Analysis</h2>
+<h2>Upload Audio for Speaking Analysis</h2>
 
-  <input type="file" id="audioFile" accept="audio/*">
-  <button onclick="uploadAudio()">Submit</button>
+<input type="file" id="audioFile" accept="audio/*">
+<button onclick="uploadAudio()">Submit</button>
 
-  <script>
-    async function uploadAudio() {
-      const fileInput = document.getElementById("audioFile");
-      const file = fileInput.files[0];
+<script>
 
-      if (!file) {
-        alert("Please choose an audio file.");
-        return;
-      }
+function uploadAudio() {
 
-      try {
-        // Bước 1: upload file
-        const formData = new FormData();
-        formData.append("file", file);
+  const fileInput = document.getElementById("audioFile");
+  const file = fileInput.files[0];
 
-        const uploadResponse = await fetch("http://127.0.0.1:8001/api/v1/upload-audio", {
-          method: "POST",
-          body: formData
-        });
+  if (!file) {
+    alert("Please choose an audio file.");
+    return;
+  }
 
-        const uploadRaw = await uploadResponse.text();
+  const formData = new FormData();
+  formData.append("file", file);
 
-        if (!uploadResponse.ok) {
-          alert("Upload file failed: " + uploadRaw);
-          return;
-        }
+  fetch("http://127.0.0.1:8002/api/v1/upload-audio", {
+    method: "POST",
+    body: formData
+  })
+  .then(function(response) {
 
-        const uploadResult = JSON.parse(uploadRaw);
-
-        // Bước 2: submit audio_path
-        const submitPayload = {
-          user_id: 1,
-          audio_path: uploadResult.audio_path,
-          asr_type: "whisper"
-        };
-
-        const submitResponse = await fetch("http://127.0.0.1:8001/api/v1/submit/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(submitPayload)
-        });
-
-        const submitRaw = await submitResponse.text();
-
-        if (!submitResponse.ok) {
-          alert("Submit failed: " + submitRaw);
-          return;
-        }
-
-        const submitResult = JSON.parse(submitRaw);
-
-        localStorage.setItem("submit_id", submitResult.id);
-        localStorage.setItem("audio_path", uploadResult.audio_path);
-
-        alert("Submit success");
-        window.location.href = "/view/transcript.html";
-
-      } catch (error) {
-        alert("Error: " + error.message);
-      }
+    if (!response.ok) {
+      return response.text().then(function(text){
+        throw new Error(text);
+      });
     }
-  </script>
+
+    return response.json();
+
+  })
+  .then(function(uploadResult){
+
+    const submitPayload = {
+      user_id: 1,
+      audio_path: uploadResult.audio_path,
+      asr_type: "whisper"
+    };
+
+    return fetch("http://127.0.0.1:8002/api/v1/submit/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(submitPayload)
+    });
+
+  })
+  .then(function(response){
+
+    if (!response.ok) {
+      return response.text().then(function(text){
+        throw new Error(text);
+      });
+    }
+
+    return response.json();
+
+  })
+  .then(function(submitResult){
+
+    localStorage.setItem("submit_id", submitResult.id);
+
+    alert("Submit success");
+
+    window.location.href = "/view/transcript.html";
+
+  })
+  .catch(function(error){
+
+    alert("Error: " + error.message);
+
+  });
+
+}
+
+</script>
 
 </body>
 </html>
