@@ -9,83 +9,82 @@
 <h2>Upload Audio for Speaking Analysis</h2>
 
 <input type="file" id="audioFile" accept="audio/*">
-<button onclick="uploadAudio()">Submit</button>
+<button id="uploadBtn" type="button" onclick="uploadAudio()">Submit</button>
+
+<p id="statusText" style="display:none; color:blue; margin-top:10px; font-weight:bold;"></p>
 
 <script>
-
 function uploadAudio() {
-
   const fileInput = document.getElementById("audioFile");
   const file = fileInput.files[0];
+  const statusText = document.getElementById("statusText");
+  const uploadBtn = document.getElementById("uploadBtn");
 
   if (!file) {
     alert("Please choose an audio file.");
     return;
   }
 
+  statusText.style.display = "block";
+  statusText.innerText = "Uploading audio...";
+  uploadBtn.disabled = true;
+
   const formData = new FormData();
   formData.append("file", file);
 
-  fetch("http://127.0.0.1:8100/api/v1/upload-audio", {
-    method: "POST",
-    body: formData
-  })
-  .then(function(response) {
-
-    if (!response.ok) {
-      return response.text().then(function(text){
-        throw new Error(text);
-      });
-    }
-
-    return response.json();
-
-  })
-  .then(function(uploadResult){
-
-    const submitPayload = {
-      user_id: 1,
-      audio_path: uploadResult.audio_path,
-      asr_type: "whisper"
-    };
-
-    return fetch("http://127.0.0.1:8100/api/v1/submit/", {
+  setTimeout(function () {
+    fetch("http://127.0.0.1:8100/api/v1/upload-audio", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(submitPayload)
-    });
+      body: formData
+    })
+    .then(function(response) {
+      if (!response.ok) {
+        return response.text().then(function(text) {
+          throw new Error(text);
+        });
+      }
+      return response.json();
+    })
+    .then(function(uploadResult) {
+      statusText.innerText = "Processing...";
 
-  })
-  .then(function(response){
+      const submitPayload = {
+        user_id: 1,
+        audio_path: uploadResult.audio_path,
+        asr_type: "whisper"
+      };
 
-    if (!response.ok) {
-      return response.text().then(function(text){
-        throw new Error(text);
+      return fetch("http://127.0.0.1:8100/api/v1/submit/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(submitPayload)
       });
-    }
+    })
+    .then(function(response) {
+      if (!response.ok) {
+        return response.text().then(function(text) {
+          throw new Error(text);
+        });
+      }
+      return response.json();
+    })
+    .then(function(submitResult) {
+      localStorage.setItem("submit_id", submitResult.id);
 
-    return response.json();
+      statusText.innerText = "Submit success";
 
-  })
-  .then(function(submitResult){
-
-    localStorage.setItem("submit_id", submitResult.id);
-
-    alert("Submit success");
-
-    window.location.href = "/view/transcript.html";
-
-  })
-  .catch(function(error){
-
-    alert("Error: " + error.message);
-
-  });
-
+      setTimeout(function() {
+        window.location.href = "/view/transcript.html";
+      }, 2000);
+    })
+    .catch(function(error) {
+      statusText.innerText = "Error: " + error.message;
+      uploadBtn.disabled = false;
+    });
+  }, 50);
 }
-
 </script>
 
 </body>
