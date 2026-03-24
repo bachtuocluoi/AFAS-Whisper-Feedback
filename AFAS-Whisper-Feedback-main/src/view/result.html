@@ -42,7 +42,7 @@ function loadResult() {
   }
 
   // Fluency
-  fetch("http://127.0.0.1:8002/api/v1/fluency/" + submit_id)
+  fetch("http://127.0.0.1:8100/api/v1/fluency/" + submit_id)
     .then(function(res) {
       if (!res.ok) {
         throw new Error("No fluency data");
@@ -60,7 +60,7 @@ function loadResult() {
     });
 
   // Lexical
-  fetch("http://127.0.0.1:8002/api/v1/lexical/" + submit_id)
+  fetch("http://127.0.0.1:8100/api/v1/lexical/" + submit_id)
     .then(function(res) {
       if (!res.ok) {
         throw new Error("No lexical data");
@@ -70,6 +70,11 @@ function loadResult() {
     .then(function(data) {
       console.log("lexical:", data);
       document.getElementById("lexical").innerHTML =
+        "A1: " + (data.A1 ?? "N/A") + "<br>" +
+        "A2: " + (data.A2 ?? "N/A") + "<br>" +
+        "B1: " + (data.B1 ?? "N/A") + "<br>" +
+        "B2: " + (data.B2 ?? "N/A") + "<br>" +
+        "C1: " + (data.C1 ?? "N/A") + "<br>" +
         "TTR: " + (data.ttr ?? "N/A") + "<br>" +
         "MTTR: " + (data.mttr ?? "N/A");
     })
@@ -78,7 +83,7 @@ function loadResult() {
     });
 
   // Pronunciation
-  fetch("http://127.0.0.1:8002/api/v1/pronunciation/" + submit_id)
+  fetch("http://127.0.0.1:8100/api/v1/pronunciation/" + submit_id)
     .then(function(res) {
       if (!res.ok) {
         throw new Error("No pronunciation data");
@@ -88,29 +93,34 @@ function loadResult() {
     .then(function(data) {
       console.log("pronunciation:", data);
       document.getElementById("pronunciation").innerHTML =
+        "0-50%: " + (data.score_0_50 ?? "N/A") + "<br>" +
+        "50-70%: " + (data.score_50_70 ?? "N/A") + "<br>" +
+        "70-85%: " + (data.score_70_85 ?? "N/A") + "<br>" +
         "85-95%: " + (data.score_85_95 ?? "N/A") + "<br>" +
-        "95-100%: " + (data.score_95_100 ?? "N/A");
+        "95-100%: " + (data.score_95_100 ?? "N/A") + "<br>" +
+        "pronunciation_score: " + (data.pronunciation_score ?? "N/A");
     })
     .catch(function() {
       document.getElementById("pronunciation").innerHTML = "No pronunciation data.";
     });
 
   // Feedback
-  fetch("http://127.0.0.1:8002/api/v1/feedback/" + submit_id)
-    .then(function(res) {
-      if (!res.ok) {
-        throw new Error("No feedback data");
-      }
-      return res.json();
-    })
-    .then(function(data) {
-      console.log("feedback:", data);
-      document.getElementById("feedback").innerHTML =
-        data.feedback ?? "No feedback data.";
-    })
-    .catch(function() {
-      document.getElementById("feedback").innerHTML = "No feedback data.";
-    });
+  fetch("http://127.0.0.1:8100/api/v1/feedback/" + submit_id)
+  .then(function(res) {
+    if (!res.ok) {
+      throw new Error("No feedback data");
+    }
+    return res.json();
+  })
+  .then(function(data) {
+    console.log("feedback:", data);
+    document.getElementById("feedback").innerHTML =
+      data.feedback ?? "No feedback data.";
+  })
+  .catch(function(error) {
+    console.error("feedback error:", error);
+    document.getElementById("feedback").innerHTML = "No feedback data.";
+  });
 }
 
 function goBackUpload() {

@@ -179,29 +179,29 @@ def submit_audio(
             "speech_rate": fluency_data["speech_rate"],
             "pause_ratio": fluency_data["pause_ratio"],
             "ttr": lexical_diversity["ttr"],
-            "msttr": lexical_diversity["mttr"],  
+            "msttr": lexical_diversity["mttr"],
             "a1": lexical_cefr["a1"],
             "a2": lexical_cefr["a2"],
             "b1": lexical_cefr["b1"],
             "b2": lexical_cefr["b2"],
             "c1": lexical_cefr["c1"],
-            "score_0_50": pronunciation_data["score_0_50"]/100,
-            "score_50_70": pronunciation_data["score_50_70"]/100,
-            "score_70_85": pronunciation_data["score_70_85"]/100,
-            "score_85_95":pronunciation_data["score_85_95"]/100,
-            "score_95_100": pronunciation_data["score_95_100"]/100,
-            "pronunciation_score": pronunciation_data["pronunciation_score"]
+            "score_0_50": pronunciation_data["score_0_50"],
+            "score_50_70": pronunciation_data["score_50_70"],
+            "score_70_85": pronunciation_data["score_70_85"],
+            "score_85_95": pronunciation_data["score_85_95"],
+            "score_95_100": pronunciation_data["score_95_100"],
+            "pronunciation": pronunciation_data["pronunciation_score"]
         }
 
 
         feedback_result = generate_feedback(features)
 
         feedback_text = (
-            f"Fluency: {feedback_result['fluency']}. "
-            f"Pause: {feedback_result['pause']}. "
-            f"Lexical diversity: {feedback_result['lexical_diversity']}. "
-            f"Lexical level: {feedback_result['lexical_level']}. "
-            f"Pronunciation: {feedback_result['pronunciation']}."
+            f"Fluency: {feedback_result['fluency']}<br>"
+            f"Pause: {feedback_result['pause']}<br>"
+            f"Lexical diversity: {feedback_result['lexical_diversity']}<br>"
+            f"Lexical level: {feedback_result['lexical_level']}<br>"
+            f"Pronunciation: {feedback_result['pronunciation']}"
         )
 
         db_feedback = models.Feedback(

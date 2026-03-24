@@ -1,3 +1,5 @@
+
+
 def f_fluency(speed_rate):
     if speed_rate < 90:
         return "Improve speech fluency"
@@ -54,9 +56,6 @@ def generate_feedback(features):
     speech_rate = features.get("speech_rate", 0.0)
     pause_ratio = features.get("pause_ratio", 0.0)
     msttr = features.get("msttr", 0.0)
-    a1 = features.get("a1", 0.0)
-    a2 = features.get("a2", 0.0)
-    b1 = features.get("b1", 0.0)
     b2 = features.get("b2", 0.0)
     c1 = features.get("c1", 0.0)
     pronunciation = features.get("pronunciation", 0.0)

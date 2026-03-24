@@ -11,28 +11,21 @@ from src.schemas.feedback import FeedbackCreate, FeedbackResponse
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
 
-@router.get("/{submit_id}", response_model=List[FeedbackResponse])
+@router.get("/{submit_id}", response_model=FeedbackResponse)
 def get_feedback_by_submit(
     submit_id: int,
     db: db_dependency
 ):
-    """
-    Get all feedback entries for a specific submission.
-    
-    Args:
-        submit_id: ID of the submission
-        db: Database session
-        
-    Returns:
-        List of feedback entries
-    """
-    feedbacks = (
+    feedback = (
         db.query(models.Feedback)
         .filter(models.Feedback.submit_id == submit_id)
-        .all()
+        .first()
     )
-    
-    return feedbacks
+
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+
+    return feedback
 
 
 @router.post("/", response_model=FeedbackResponse, status_code=201)
