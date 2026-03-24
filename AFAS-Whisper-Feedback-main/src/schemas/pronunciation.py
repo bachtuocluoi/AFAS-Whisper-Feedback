@@ -13,6 +13,7 @@ class PronunciationBase(BaseModel):
     score_70_85: float   # Percentage of words with 70-85% confidence
     score_85_95: float   # Percentage of words with 85-95% confidence
     score_95_100: float  # Percentage of words with 95-100% confidence
+    pronunciation_score: float # average of all percentages
 
 
 class PronunciationCreate(PronunciationBase):

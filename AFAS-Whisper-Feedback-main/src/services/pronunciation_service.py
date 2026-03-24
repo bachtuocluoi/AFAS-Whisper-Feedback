@@ -98,7 +98,8 @@ def compute_pronunciation_metrics(asr_result: dict) -> Dict[str, float]:
             bin_map[label] = round(proportion, 2)
 
     # điểm pronunciation tổng hợp đơn giản: lấy tỷ lệ nhóm 95-100 chia 100
-    pronunciation_score = round(bin_map["95-100"] / 100, 4)
+    # điểm pronunciation tổng hợp: trung bình toàn bộ probability
+    pronunciation_score = round(sum(probabilities) / len(probabilities), 4) * 100
 
     return {
         "score_0_50": bin_map["0-50"],

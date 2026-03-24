@@ -61,7 +61,8 @@ def create_pronunciation(
         score_50_70=pronunciation.score_50_70,
         score_70_85=pronunciation.score_70_85,
         score_85_95=pronunciation.score_85_95,
-        score_95_100=pronunciation.score_95_100
+        score_95_100=pronunciation.score_95_100,
+        pronunciation_score = pronunciation.pronunciation_score
     )
     
     db.add(db_pronunciation)

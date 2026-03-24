@@ -136,6 +136,7 @@ class Pronunciation(Base):
         score_70_85: Percentage of words with confidence 70-85%
         score_85_95: Percentage of words with confidence 85-95%
         score_95_100: Percentage of words with confidence 95-100%
+        pronunciation_score: float # average of all percentages
     """
     __tablename__ = "pronunciation"
 
@@ -148,6 +149,7 @@ class Pronunciation(Base):
     score_70_85 = Column(Float, nullable=False)
     score_85_95 = Column(Float, nullable=False)
     score_95_100 = Column(Float, nullable=False)
+    pronunciation_score = Column(Float, nullable=False)
 
     # Relationship
     submit = relationship("Submit", back_populates="pronunciation")

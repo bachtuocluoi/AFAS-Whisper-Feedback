@@ -159,8 +159,9 @@ def submit_audio(
             score_0_50 = pronunciation_data["score_0_50"],
             score_50_70 = pronunciation_data["score_50_70"],
             score_70_85 = pronunciation_data["score_70_85"],
-            score_85_95=pronunciation_data["score_85_95"],
-            score_95_100=pronunciation_data["score_95_100"]
+            score_85_95 = pronunciation_data["score_85_95"],
+            score_95_100 = pronunciation_data["score_95_100"],
+            pronunciation_score = pronunciation_data["pronunciation_score"]
         )
         db.add(db_pronunciation)
         db.commit()
