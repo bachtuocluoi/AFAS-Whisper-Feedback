@@ -8,9 +8,9 @@ def f_fluency(speed_rate):
 
 
 def f_pause(pause_ratio):
-    if pause_ratio > 0.20:
+    if pause_ratio > 0.30:
         return "Reduce excessive pauses"
-    elif 0.15 <= pause_ratio <= 0.20:
+    elif 0.15 <= pause_ratio <= 0.30:
         return "Pause usage acceptable"
     else:  # pause_ratio < 0.15
         return "Consider adding natural pauses"

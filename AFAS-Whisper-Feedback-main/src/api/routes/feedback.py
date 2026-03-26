@@ -16,6 +16,16 @@ def get_feedback_by_submit(
     submit_id: int,
     db: db_dependency
 ):
+    """
+    Get all feedback entries for a specific submission.
+    
+    Args:
+        submit_id: ID of the submission
+        db: Database session
+        
+    Returns:
+        List of feedback entries
+    """
     feedback = (
         db.query(models.Feedback)
         .filter(models.Feedback.submit_id == submit_id)
@@ -26,6 +36,7 @@ def get_feedback_by_submit(
         raise HTTPException(status_code=404, detail="Feedback not found")
 
     return feedback
+
 
 
 @router.post("/", response_model=FeedbackResponse, status_code=201)
