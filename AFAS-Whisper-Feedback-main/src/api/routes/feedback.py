@@ -3,7 +3,6 @@ API routes for feedback management.
 """
 
 from fastapi import APIRouter, HTTPException
-from typing import List
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.feedback import FeedbackCreate, FeedbackResponse

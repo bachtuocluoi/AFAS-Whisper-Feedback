@@ -198,10 +198,10 @@ def submit_audio(
         feedback_result = generate_feedback(features)
 
         feedback_text = (
-            f"Fluency: {feedback_result['fluency']}<br>"
-            f"Pause: {feedback_result['pause']}<br>"
-            f"Lexical diversity: {feedback_result['lexical_diversity']}<br>"
-            f"Lexical level: {feedback_result['lexical_level']}<br>"
+            f"Fluency: {feedback_result['fluency']}"
+            f"Pause: {feedback_result['pause']}"
+            f"Lexical diversity: {feedback_result['lexical_diversity']}"
+            f"Lexical level: {feedback_result['lexical_level']}"
             f"Pronunciation: {feedback_result['pronunciation']}"
         )
 

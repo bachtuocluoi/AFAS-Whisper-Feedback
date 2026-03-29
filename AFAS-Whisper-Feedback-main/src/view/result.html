@@ -1,137 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Speaking Result</title>
+  <meta charset="UTF-8" />
+  <title>Speaking Analysis Result</title>
+  <link rel="stylesheet" href="/view/result.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
 <body>
 
-<h2>Speaking Analysis Result</h2>
 
-<h3>Fluency</h3>
-<div id="fluency">Loading...</div>
+  <div class="container">
+    <h1>Speaking Analysis Result</h1>
 
-<h3>Lexical</h3>
-<div id="lexical">Loading...</div>
+    <div class="top-actions">
+      <button onclick="goToTranscript()">Back to Transcript</button>
+      <button onclick="goBackUpload()">Upload Another Audio</button>
+    </div>
 
-<h3>Pronunciation</h3>
-<div id="pronunciation">Loading...</div>
+    <!-- FLUENCY -->
+    <section class="card">
+      <h2>Fluency</h2>
 
-<h3>Feedback</h3>
-<div id="feedback">Loading...</div>
+      <table class="fluency-table">
+        <tr>
+          <td>Speech Rate</td>
+          <td id="speechRateValue">Loading...</td>
+        </tr>
+        <tr>
+          <td>Pause Ratio</td>
+          <td id="pauseRatioValue">Loading...</td>
+        </tr>
+      </table>
 
-<br>
+      <div class="inline-feedback">
+        <h3>Fluency Feedback</h3>
+        <p id="fluencyFeedbackText">Loading...</p>
 
-<button onclick="window.location.href='/view/transcript.html'">
-Back to Transcript
-</button>
+        <h3>Pause Feedback</h3>
+        <p id="pauseFeedbackText">Loading...</p>
+      </div>
+    </section>
 
-<button onclick="goBackUpload()">
-Upload Another Audio
-</button>
+    <!-- LEXICAL -->
+    <section class="card">
+      <div class="header-row">
+        <h2>Lexical</h2>
+        <select id="lexicalChartType">
+          <option value="pie">Pie</option>
+          <option value="bar">Bar</option>
+        </select>
+      </div>
 
-<script>
+      <div class="grid-2">
+        <div id="lexicalMainChart" class="chart-box"></div>
+        <div id="lexicalDiversityChart" class="chart-box"></div>
+      </div>
 
-function loadResult() {
-  const submit_id = localStorage.getItem("submit_id");
+      <div class="inline-feedback">
+        <h3>Lexical Diversity</h3>
+        <p id="lexicalDiversityFeedbackText">Loading...</p>
 
-  if (!submit_id) {
-    alert("No submit_id found");
-    window.location.href = "/view/upload.html";
-    return;
-  }
+        <h3>Lexical Level</h3>
+        <p id="lexicalLevelFeedbackText">Loading...</p>
+      </div>
+    </section>
 
-  // Fluency
-  fetch("http://127.0.0.1:8100/api/v1/fluency/" + submit_id)
-    .then(function(res) {
-      if (!res.ok) {
-        throw new Error("No fluency data");
-      }
-      return res.json();
-    })
-    .then(function(data) {
-      console.log("fluency:", data);
-      document.getElementById("fluency").innerHTML =
-        "Speed Rate: " + (data.speed_rate ?? "N/A") + "<br>" +
-        "Pause Ratio: " + (data.pause_ratio ?? "N/A");
-    })
-    .catch(function() {
-      document.getElementById("fluency").innerHTML = "No fluency data.";
-    });
+    <!-- PRONUNCIATION -->
+    <section class="card">
+      <div class="header-row">
+        <h2>Pronunciation</h2>
+        <select id="pronChartType">
+          <option value="pie">Pie</option>
+          <option value="bar">Bar</option>
+        </select>
+      </div>
 
-  // Lexical
-  fetch("http://127.0.0.1:8100/api/v1/lexical/" + submit_id)
-    .then(function(res) {
-      if (!res.ok) {
-        throw new Error("No lexical data");
-      }
-      return res.json();
-    })
-    .then(function(data) {
-      console.log("lexical:", data);
-      document.getElementById("lexical").innerHTML =
-        "A1: " + (data.A1 ?? "N/A") + "<br>" +
-        "A2: " + (data.A2 ?? "N/A") + "<br>" +
-        "B1: " + (data.B1 ?? "N/A") + "<br>" +
-        "B2: " + (data.B2 ?? "N/A") + "<br>" +
-        "C1: " + (data.C1 ?? "N/A") + "<br>" +
-        "TTR: " + (data.ttr ?? "N/A") + "<br>" +
-        "MTTR: " + (data.mttr ?? "N/A");
-    })
-    .catch(function() {
-      document.getElementById("lexical").innerHTML = "No lexical data.";
-    });
+      <div class="grid-5">
+        <div class="mini-card"><div>0-50%</div><strong id="p0_50">-</strong></div>
+        <div class="mini-card"><div>50-70%</div><strong id="p50_70">-</strong></div>
+        <div class="mini-card"><div>70-85%</div><strong id="p70_85">-</strong></div>
+        <div class="mini-card"><div>85-95%</div><strong id="p85_95">-</strong></div>
+        <div class="mini-card"><div>95-100%</div><strong id="p95_100">-</strong></div>
+      </div>
+      
+      <table class="fluency-table" style="margin-top: 16px;">
+        <tr>
+          <td>Pronunciation Score</td>
+          <td id="pronunciationScoreValue">Loading...</td>
+        </tr>
+      </table>
+      
+      <div id="pronChart" class="chart-box"></div>
 
-  // Pronunciation
-  fetch("http://127.0.0.1:8100/api/v1/pronunciation/" + submit_id)
-    .then(function(res) {
-      if (!res.ok) {
-        throw new Error("No pronunciation data");
-      }
-      return res.json();
-    })
-    .then(function(data) {
-      console.log("pronunciation:", data);
-      document.getElementById("pronunciation").innerHTML =
-        "0-50%: " + (data.score_0_50 ?? "N/A") + "<br>" +
-        "50-70%: " + (data.score_50_70 ?? "N/A") + "<br>" +
-        "70-85%: " + (data.score_70_85 ?? "N/A") + "<br>" +
-        "85-95%: " + (data.score_85_95 ?? "N/A") + "<br>" +
-        "95-100%: " + (data.score_95_100 ?? "N/A") + "<br>" +
-        "pronunciation_score: " + (data.pronunciation_score ?? "N/A");
-    })
-    .catch(function() {
-      document.getElementById("pronunciation").innerHTML = "No pronunciation data.";
-    });
+      <div class="inline-feedback">
+        <h3>Pronunciation Feedback</h3>
+        <p id="pronunciationFeedbackText">Loading...</p>
+      </div>
+    </section>
 
-  // Feedback
-  fetch("http://127.0.0.1:8100/api/v1/feedback/" + submit_id)
-  .then(function(res) {
-    if (!res.ok) {
-      throw new Error("No feedback data");
-    }
-    return res.json();
-  })
-  .then(function(data) {
-    console.log("feedback:", data);
-    document.getElementById("feedback").innerHTML =
-      data.feedback ?? "No feedback data.";
-  })
-  .catch(function(error) {
-    console.error("feedback error:", error);
-    document.getElementById("feedback").innerHTML = "No feedback data.";
-  });
-}
+  </div>
 
-function goBackUpload() {
-  localStorage.removeItem("submit_id");
-  localStorage.removeItem("audio_path");
-  window.location.href = "/view/upload.html";
-}
-
-loadResult();
-
-</script>
-
+  <script src="/view/result.js"></script>
 </body>
 </html>
