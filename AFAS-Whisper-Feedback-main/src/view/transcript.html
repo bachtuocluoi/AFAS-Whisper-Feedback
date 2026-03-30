@@ -6,19 +6,18 @@
 </head>
 <body>
 
-<h2>Transcript</h2>
+  <h2>Transcript</h2>
 
-<table border="1" cellpadding="8" cellspacing="0">
-<thead>
-<tr>
-<th>Word</th>
-<th>Probability</th>
-<th>Start</th>
-<th>End</th>
-</tr>
-</thead>
-<tbody id="table"></tbody>
-</table>
+  <div id="transcriptLine" style="font-size: 20px; line-height: 1.8; margin-bottom: 20px;"></div>
+  
+  <table border="1" cellpadding="8" cellspacing="0">
+    <tbody>
+      <tr id="rowWord"></tr>
+      <tr id="rowProb"></tr>
+      <tr id="rowStart"></tr>
+      <tr id="rowEnd"></tr>
+    </tbody>
+  </table>
 
 <br>
 
@@ -26,80 +25,81 @@
 <button onclick="goBackUpload()">Upload Another Audio</button>
 
 <script>
-
-function loadTranscript(){
-
-  const submit_id = localStorage.getItem("submit_id");
-
-  if (!submit_id) {
-    alert("No submit_id found.");
-    window.location.href="/view/upload.html";
-    return;
-  }
-
-  fetch("http://127.0.0.1:8100/api/v1/transcripts/" + submit_id)
-
-  .then(function(response){
-
-    if (!response.ok) {
-      throw new Error("Failed to load transcript");
-    }
-
-    return response.json();
-
-  })
-
-  .then(function(data){
-
-    const table = document.getElementById("table");
-    table.innerHTML="";
-
-    if(!data || data.length===0){
-
-      table.innerHTML =
-      "<tr><td colspan='4'>No transcript data</td></tr>";
-
+  function loadTranscript() {
+    const submit_id = localStorage.getItem("submit_id");
+  
+    if (!submit_id) {
+      alert("No submit_id found.");
+      window.location.href = "/view/upload.html";
       return;
     }
+  
+    fetch("http://127.0.0.1:8100/api/v1/transcripts/" + submit_id)
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error("Failed to load transcript");
+        }
+        return response.json();
+      })
+      .then(function(data){
 
-    data.forEach(function(word){
+        const rowWord = document.getElementById("rowWord");
+        const rowProb = document.getElementById("rowProb");
+        const rowStart = document.getElementById("rowStart");
+        const rowEnd = document.getElementById("rowEnd");
 
-      table.innerHTML +=
-      "<tr>"+
-      "<td>"+word.word+"</td>"+
-      "<td>"+word.prob+"</td>"+
-      "<td>"+word.start+"</td>"+
-      "<td>"+word.end+"</td>"+
-      "</tr>";
+        rowWord.innerHTML = "<th>Word</th>";
+        rowProb.innerHTML = "<th>Probability</th>";
+        rowStart.innerHTML = "<th>Start</th>";
+        rowEnd.innerHTML = "<th>End</th>";
 
-    });
+        if (!data || data.length === 0) {
+          rowWord.innerHTML += "<td>No data</td>";
+          return;
+        }
 
-  })
+        data.forEach(function(word){
 
-  .catch(function(error){
+          const isLow = word.prob < 0.5;
 
-    alert("Error loading transcript");
+          // Word
+          rowWord.innerHTML +=
+            `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
+              ${word.word}
+            </td>`;
 
-  });
+          // Probability
+          rowProb.innerHTML +=
+            `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
+              ${word.prob.toFixed(2)}
+            </td>`;
 
-}
+          // Start
+          rowStart.innerHTML += `<td>${word.start}</td>`;
 
-function goToResult(){
+          // End
+          rowEnd.innerHTML += `<td>${word.end}</td>`;
 
-  window.location.href="/view/result.html";
+        });
 
-}
-
-function goBackUpload(){
-
-  localStorage.removeItem("submit_id");
-  window.location.href="/view/upload.html";
-
-}
-
-loadTranscript();
-
-</script>
+        })
+      .catch(function(error) {
+        alert("Error loading transcript");
+        console.error(error);
+      });
+  }
+  
+  function goToResult() {
+    window.location.href = "/view/result.html";
+  }
+  
+  function goBackUpload() {
+    localStorage.removeItem("submit_id");
+    window.location.href = "/view/upload.html";
+  }
+  
+  loadTranscript();
+  </script>
 
 </body>
 </html>
