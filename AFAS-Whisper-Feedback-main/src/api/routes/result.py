@@ -2,10 +2,8 @@ from fastapi import APIRouter, HTTPException
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.services.result_chart_service import (
-    build_lexical_pie_chart,
     build_lexical_bar_chart,
     build_lexical_diversity_chart,
-    build_pronunciation_pie_chart,
     build_pronunciation_bar_chart,
 )
 
@@ -86,7 +84,6 @@ def get_result_dashboard(submit_id: int, db: db_dependency):
             "B2": round(float(lexical.B2), 2),
             "C1": round(float(lexical.C1), 2)
         }
-        payload["charts"]["lexical_pie"] = build_lexical_pie_chart(payload["lexical"]).to_dict()
         payload["charts"]["lexical_bar"] = build_lexical_bar_chart(payload["lexical"]).to_dict()
         payload["charts"]["lexical_diversity_bar"] = build_lexical_diversity_chart(payload["lexical"]).to_dict()
 
@@ -100,7 +97,6 @@ def get_result_dashboard(submit_id: int, db: db_dependency):
             "pronunciation_score": round(float(pronunciation.pronunciation_score), 2)
 
         }
-        payload["charts"]["pronunciation_pie"] = build_pronunciation_pie_chart(payload["pronunciation"]).to_dict()
         payload["charts"]["pronunciation_bar"] = build_pronunciation_bar_chart(payload["pronunciation"]).to_dict()
 
     if feedback:

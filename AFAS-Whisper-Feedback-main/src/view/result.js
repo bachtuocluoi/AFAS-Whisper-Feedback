@@ -58,8 +58,7 @@ function renderFluency() {
 function renderLexical() {
   const d = dashboardData;
 
-  const type = document.getElementById("lexicalChartType").value;
-  const fig = type === "pie" ? d.charts.lexical_pie : d.charts.lexical_bar;
+  const fig  = d.charts.lexical_bar;
 
   Plotly.newPlot("lexicalMainChart", fig.data, fig.layout);
   Plotly.newPlot("lexicalDiversityChart", d.charts.lexical_diversity_bar.data);
@@ -82,8 +81,7 @@ function renderPronunciation() {
   document.getElementById("pronunciationScoreValue").innerText =
   format2(d.pronunciation.pronunciation_score ?? 0);
 
-  const type = document.getElementById("pronChartType").value;
-  const fig = type === "pie" ? d.charts.pronunciation_pie : d.charts.pronunciation_bar;
+  const fig = d.charts.pronunciation_bar;
 
   Plotly.newPlot("pronChart", fig.data, fig.layout);
 
@@ -100,7 +98,5 @@ function goBackUpload() {
   window.location.href = "/view/upload.html";
 }
 
-document.getElementById("lexicalChartType").addEventListener("change", renderLexical);
-document.getElementById("pronChartType").addEventListener("change", renderPronunciation);
 
 loadResult();

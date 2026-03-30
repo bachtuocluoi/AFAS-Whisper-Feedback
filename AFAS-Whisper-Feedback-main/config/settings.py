@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     
     # Data Paths
     cefr_dict_path: str = "data/oxford_cerf.csv"
+
+    backend_base_url: str = "http://127.0.0.1:8100"
     
     class Config:
         env_file = ".env"
