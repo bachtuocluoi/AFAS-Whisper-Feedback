@@ -17,82 +17,143 @@
     </tbody>
   </table>
 
-<br>
+  <br>
 
-<button onclick="goToResult()">Go to Result</button>
-<button onclick="goBackUpload()">Upload Another Audio</button>
+  <h3>Summary of Frequently Low-Confidence Words</h3>
+  <table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Word</th>
+        <th>Count</th>
+        <th>Average Probability</th>
+        <th>All Probabilities</th>
+      </tr>
+    </thead>
+    <tbody id="lowProbSummary"></tbody>
+  </table>
 
-<script src="/api/v1/view-config.js"></script>
+  <br>
+
+  <button onclick="goToResult()">Go to Result</button>
+  <button onclick="goBackUpload()">Upload Another Audio</button>
+
+  <script src="/api/v1/view-config.js"></script>
   <script>
     const BACKEND_BASE_URL =
       window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
-      
-  function loadTranscript() {
-    const submit_id = localStorage.getItem("submit_id");
-  
-    if (!submit_id) {
-      alert("No submit_id found.");
-      window.location.href = "/view/upload.html";
-      return;
-    }
-  
-    fetch(BACKEND_BASE_URL + "/api/v1/transcripts/" + submit_id)
-      .then(function(response) {
-        if (!response.ok) {
-          throw new Error("Failed to load transcript");
-        }
-        return response.json();
-      })
-      .then(function(data){
 
-        const rowWord = document.getElementById("rowWord");
-        const rowProb = document.getElementById("rowProb");
+    function loadTranscript() {
+      const submit_id = localStorage.getItem("submit_id");
 
-        rowWord.innerHTML = "<th>Word</th>";
-        rowProb.innerHTML = "<th>Probability</th>";
+      if (!submit_id) {
+        alert("No submit_id found.");
+        window.location.href = "/view/upload.html";
+        return;
+      }
 
-
-        if (!data || data.length === 0) {
-          rowWord.innerHTML += "<td>No data</td>";
-          return;
-        }
-
-        data.forEach(function(word){
-
-          const isLow = word.prob < 0.5;
-
-          // Word
-          rowWord.innerHTML +=
-            `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
-              ${word.word}
-            </td>`;
-
-          // Probability
-          rowProb.innerHTML +=
-            `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
-              ${word.prob.toFixed(2)}
-            </td>`;
-
-
-        });
-
+      fetch(BACKEND_BASE_URL + "/api/v1/transcripts/" + submit_id)
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error("Failed to load transcript");
+          }
+          return response.json();
         })
-      .catch(function(error) {
-        alert("Error loading transcript");
-        console.error(error);
-      });
-  }
-  
-  function goToResult() {
-    window.location.href = "/view/result.html";
-  }
-  
-  function goBackUpload() {
-    localStorage.removeItem("submit_id");
-    window.location.href = "/view/upload.html";
-  }
-  
-  loadTranscript();
+        .then(function(data) {
+          const rowWord = document.getElementById("rowWord");
+          const rowProb = document.getElementById("rowProb");
+          const lowProbSummary = document.getElementById("lowProbSummary");
+
+          rowWord.innerHTML = "<th>Word</th>";
+          rowProb.innerHTML = "<th>Probability</th>";
+          lowProbSummary.innerHTML = "";
+
+          if (!data || data.length === 0) {
+            rowWord.innerHTML += "<td>No data</td>";
+            lowProbSummary.innerHTML = `
+              <tr>
+                <td colspan="4">No low-confidence words found.</td>
+              </tr>
+            `;
+            return;
+          }
+
+          const lowWordMap = {};
+
+          data.forEach(function(word) {
+            const prob = Number(word.prob);
+            const isLow = prob < 0.5;
+
+            rowWord.innerHTML +=
+              `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
+                ${word.word}
+              </td>`;
+
+            rowProb.innerHTML +=
+              `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
+                ${prob.toFixed(2)}
+              </td>`;
+
+            if (isLow) {
+              const cleanWord = String(word.word).trim().toLowerCase();
+
+              if (!lowWordMap[cleanWord]) {
+                lowWordMap[cleanWord] = {
+                  displayWord: word.word.trim(),
+                  count: 0,
+                  totalProb: 0,
+                  probs: []
+                };
+              }
+
+              lowWordMap[cleanWord].count += 1;
+              lowWordMap[cleanWord].totalProb += prob;
+              lowWordMap[cleanWord].probs.push(prob.toFixed(2));
+            }
+          });
+
+          const summaryArray = Object.values(lowWordMap);
+
+          if (summaryArray.length === 0) {
+            lowProbSummary.innerHTML = `
+              <tr>
+                <td colspan="4">No low-confidence words found.</td>
+              </tr>
+            `;
+          } else {
+            summaryArray
+              .sort(function(a, b) {
+                return b.count - a.count;
+              })
+              .forEach(function(item) {
+                const avgProb = item.totalProb / item.count;
+
+                lowProbSummary.innerHTML += `
+                  <tr>
+                    <td style="color:red;font-weight:bold;">${item.displayWord}</td>
+                    <td>${item.count}</td>
+                    <td>${avgProb.toFixed(2)}</td>
+                    <td>${item.probs.join(", ")}</td>
+                  </tr>
+                `;
+              });
+          }
+        })
+        .catch(function(error) {
+          alert("Error loading transcript");
+          console.error(error);
+        });
+    }
+
+    function goToResult() {
+      window.location.href = "/view/result.html";
+    }
+
+    function goBackUpload() {
+      localStorage.removeItem("submit_id");
+      window.location.href = "/view/upload.html";
+    }
+
+    loadTranscript();
   </script>
 
 </body>
