@@ -45,13 +45,10 @@
 
         const rowWord = document.getElementById("rowWord");
         const rowProb = document.getElementById("rowProb");
-        const rowStart = document.getElementById("rowStart");
-        const rowEnd = document.getElementById("rowEnd");
 
         rowWord.innerHTML = "<th>Word</th>";
         rowProb.innerHTML = "<th>Probability</th>";
-        rowStart.innerHTML = "<th>Start</th>";
-        rowEnd.innerHTML = "<th>End</th>";
+
 
         if (!data || data.length === 0) {
           rowWord.innerHTML += "<td>No data</td>";
@@ -74,11 +71,6 @@
               ${word.prob.toFixed(2)}
             </td>`;
 
-          // Start
-          rowStart.innerHTML += `<td>${word.start}</td>`;
-
-          // End
-          rowEnd.innerHTML += `<td>${word.end}</td>`;
 
         });
 
