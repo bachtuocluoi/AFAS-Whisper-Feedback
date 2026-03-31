@@ -111,7 +111,7 @@ def full_workflow_example(audio_file_path: str = None, submit_id: int = 1):
                 json={
                     "submit_id": submit_id,
                     "ttr": lexical_diversity['TTR'],
-                    "mttr": lexical_diversity['MSTTR'],
+                    "msttr": lexical_diversity['MSTTR'],
                     "A1": cefr_result.get('A1', 0),
                     "A2": cefr_result.get('A2', 0),
                     "B1": cefr_result.get('B1', 0),

@@ -58,7 +58,7 @@ def create_lexical(
     db_lexical = models.Lexical(
         submit_id=lexical.submit_id,
         ttr=lexical.ttr,
-        mttr=lexical.mttr,
+        msttr=lexical.msttr,
         A1=lexical.A1,
         A2=lexical.A2,
         B1=lexical.B1,

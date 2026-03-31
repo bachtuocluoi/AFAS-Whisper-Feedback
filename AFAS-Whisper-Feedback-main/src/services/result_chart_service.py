@@ -29,8 +29,8 @@ def build_lexical_bar_chart(lexical):
 
 
 def build_lexical_diversity_chart(lexical):
-    labels = ["TTR", "MTTR"]
-    values = [lexical["ttr"], lexical["mttr"]]
+    labels = ["TTR", "MSTTR"]
+    values = [lexical["ttr"], lexical["msttr"]]
 
     fig = go.Figure()
     fig.add_bar(

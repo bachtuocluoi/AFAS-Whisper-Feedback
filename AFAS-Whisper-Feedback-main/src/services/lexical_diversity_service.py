@@ -155,13 +155,13 @@ def compute_lexical_diversity_metrics(asr_result: dict) -> Dict[str, float]:
             "unique_types": 0,
             "total_tokens": 0,
             "ttr": 0.0,
-            "mttr": 0.0
+            "msttr": 0.0
         }
 
     return {
         "unique_types": len(set(tokens)),
         "total_tokens": len(tokens),
         "ttr": round(compute_ttr(tokens), 4),
-        "mttr": round(compute_msttr(tokens, segment_size=settings.msttr_segment_size), 4),
+        "msttr": round(compute_msttr(tokens, segment_size=settings.msttr_segment_size), 4),
     }
 

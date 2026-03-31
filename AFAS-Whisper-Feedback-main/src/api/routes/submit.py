@@ -132,7 +132,7 @@ def submit_audio(
         db_lexical = models.Lexical(
             submit_id=db_submit.id,
             ttr=lexical_diversity["ttr"],
-            mttr=lexical_diversity["mttr"],
+            msttr=lexical_diversity["msttr"],
             A1=lexical_cefr["a1"],
             A2=lexical_cefr["a2"],
             B1=lexical_cefr["b1"],
@@ -180,7 +180,7 @@ def submit_audio(
             "speech_rate": fluency_data["speech_rate"],
             "pause_ratio": fluency_data["pause_ratio"],
             "ttr": lexical_diversity["ttr"],
-            "msttr": lexical_diversity["mttr"],
+            "msttr": lexical_diversity["msttr"],
             "a1": lexical_cefr["a1"],
             "a2": lexical_cefr["a2"],
             "b1": lexical_cefr["b1"],

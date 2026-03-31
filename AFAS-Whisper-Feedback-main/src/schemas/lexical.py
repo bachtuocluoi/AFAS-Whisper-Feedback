@@ -9,7 +9,7 @@ class LexicalBase(BaseModel):
     """Base schema for Lexical with common fields."""
     submit_id: int
     ttr: float
-    mttr: float
+    msttr: float
     A1: float  # Percentage of A1 level words
     A2: float  # Percentage of A2 level words
     B1: float  # Percentage of B1 level words

@@ -61,19 +61,19 @@ def get_best_lexical_user(db: db_dependency) -> Optional[Dict[str, Any]]:
         db: Database session
         
     Returns:
-        Dictionary with user_id, mttr, B2, and C1 percentages, or None if no data
+        Dictionary with user_id, msttr, B2, and C1 percentages, or None if no data
     """
     result = (
         db.query(
             models.Submit.user_id,
-            models.Lexical.mttr,
+            models.Lexical.msttr,
             models.Lexical.B2,
             models.Lexical.C1
         )
         .join(models.Lexical, models.Lexical.submit_id == models.Submit.id)
         .order_by(
             (models.Lexical.B2 + models.Lexical.C1).desc(),  # Advanced vocabulary
-            models.Lexical.mttr.desc()                       # Stable diversity
+            models.Lexical.msttr.desc()                       # Stable diversity
         )
         .first()
     )
@@ -81,7 +81,7 @@ def get_best_lexical_user(db: db_dependency) -> Optional[Dict[str, Any]]:
     if result:
         return {
             "user_id": result.user_id,
-            "mttr": result.mttr,
+            "msttr": result.msttr,
             "B2": result.B2,
             "C1": result.C1
         }

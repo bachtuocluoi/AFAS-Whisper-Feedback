@@ -9,7 +9,7 @@ import requests
 import json
 from typing import Dict, Any
 
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8003"
 API_BASE = f"{BASE_URL}/api/v1"
 
 
@@ -164,7 +164,7 @@ def test_create_lexical():
     lexical_data = {
         "submit_id": 1,
         "ttr": 0.75,
-        "mttr": 0.82,
+        "msttr": 0.82,
         "A1": 20.0,
         "A2": 30.0,
         "B1": 25.0,

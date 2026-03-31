@@ -99,7 +99,7 @@ class Lexical(Base):
         id: Primary key
         submit_id: Foreign key to Submit table (one-to-one)
         ttr: Type-Token Ratio (vocabulary diversity measure)
-        mttr: Mean Segmental Type-Token Ratio (more stable diversity measure)
+        msttr: Mean Segmental Type-Token Ratio (more stable diversity measure)
         A1, A2, B1, B2, C1: Percentage of words at each CEFR level
     """
     __tablename__ = "lexical"
@@ -109,7 +109,7 @@ class Lexical(Base):
     
     # Lexical diversity metrics
     ttr = Column(Float, nullable=False)  # Type-Token Ratio
-    mttr = Column(Float, nullable=False)  # Mean Segmental TTR
+    msttr = Column(Float, nullable=False)  # Mean Segmental TTR
     
     # CEFR level distribution (percentages)
     A1 = Column(Float, nullable=False)

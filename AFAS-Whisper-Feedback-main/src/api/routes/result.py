@@ -77,7 +77,7 @@ def get_result_dashboard(submit_id: int, db: db_dependency):
     if lexical:
         payload["lexical"] = {
             "ttr": round(float(lexical.ttr), 2),
-            "mttr": round(float(lexical.mttr), 2),
+            "msttr": round(float(lexical.msttr), 2),
             "A1": round(float(lexical.A1), 2),
             "A2": round(float(lexical.A2), 2),
             "B1": round(float(lexical.B1), 2),
