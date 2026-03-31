@@ -14,8 +14,6 @@
     <tbody>
       <tr id="rowWord"></tr>
       <tr id="rowProb"></tr>
-      <tr id="rowStart"></tr>
-      <tr id="rowEnd"></tr>
     </tbody>
   </table>
 
@@ -24,7 +22,11 @@
 <button onclick="goToResult()">Go to Result</button>
 <button onclick="goBackUpload()">Upload Another Audio</button>
 
-<script>
+<script src="/api/v1/view-config.js"></script>
+  <script>
+    const BACKEND_BASE_URL =
+      window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
+      
   function loadTranscript() {
     const submit_id = localStorage.getItem("submit_id");
   

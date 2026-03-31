@@ -13,78 +13,82 @@
 
 <p id="statusText" style="display:none; color:blue; margin-top:10px; font-weight:bold;"></p>
 
-<script>
-function uploadAudio() {
-  const fileInput = document.getElementById("audioFile");
-  const file = fileInput.files[0];
-  const statusText = document.getElementById("statusText");
-  const uploadBtn = document.getElementById("uploadBtn");
+<script src="/api/v1/view-config.js"></script>
+  <script>
+    const BACKEND_BASE_URL =
+      window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
+      
+    function uploadAudio() {
+      const fileInput = document.getElementById("audioFile");
+      const file = fileInput.files[0];
+      const statusText = document.getElementById("statusText");
+      const uploadBtn = document.getElementById("uploadBtn");
 
-  if (!file) {
-    alert("Please choose an audio file.");
-    return;
-  }
-
-  statusText.style.display = "block";
-  statusText.innerText = "Uploading audio...";
-  uploadBtn.disabled = true;
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  setTimeout(function () {
-    fetch(BACKEND_BASE_URL + "/api/v1/upload-audio", {
-      method: "POST",
-      body: formData
-    })
-    .then(function(response) {
-      if (!response.ok) {
-        return response.text().then(function(text) {
-          throw new Error(text);
-        });
+      if (!file) {
+        alert("Please choose an audio file.");
+        return;
       }
-      return response.json();
-    })
-    .then(function(uploadResult) {
-      statusText.innerText = "Processing...";
 
-      const submitPayload = {
-        user_id: 1,
-        audio_path: uploadResult.audio_path,
-        asr_type: "whisper"
-      };
+      statusText.style.display = "block";
+      statusText.innerText = "Uploading audio...";
+      uploadBtn.disabled = true;
 
-      return fetch(BACKEND_BASE_URL + "/api/v1/submit/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(submitPayload)
-      });
-    })
-    .then(function(response) {
-      if (!response.ok) {
-        return response.text().then(function(text) {
-          throw new Error(text);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      setTimeout(function () {
+        fetch(BACKEND_BASE_URL + "/api/v1/upload-audio", {
+          method: "POST",
+          body: formData
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            return response.text().then(function(text) {
+              throw new Error(text);
+            });
+          }
+          return response.json();
+        })
+        .then(function(uploadResult) {
+          statusText.innerText = "Processing...";
+
+          const submitPayload = {
+            user_id: 1,
+            audio_path: uploadResult.audio_path,
+            asr_type: "whisper"
+          };
+
+          return fetch(BACKEND_BASE_URL + "/api/v1/submit/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(submitPayload)
+          });
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            return response.text().then(function(text) {
+              throw new Error(text);
+            });
+          }
+          return response.json();
+        })
+        .then(function(submitResult) {
+          localStorage.setItem("submit_id", submitResult.id);
+
+          statusText.innerText = "Submit success";
+
+          setTimeout(function() {
+            window.location.href = "/view/transcript.html";
+          }, 2000);
+        })
+        .catch(function(error) {
+          statusText.innerText = "Error: " + error.message;
+          uploadBtn.disabled = false;
         });
-      }
-      return response.json();
-    })
-    .then(function(submitResult) {
-      localStorage.setItem("submit_id", submitResult.id);
-
-      statusText.innerText = "Submit success";
-
-      setTimeout(function() {
-        window.location.href = "/view/transcript.html";
-      }, 2000);
-    })
-    .catch(function(error) {
-      statusText.innerText = "Error: " + error.message;
-      uploadBtn.disabled = false;
-    });
-  }, 50);
-}
+      }, 50);
+    }
 </script>
 
 </body>
