@@ -34,7 +34,7 @@
       return;
     }
   
-    fetch("http://127.0.0.1:8100/api/v1/transcripts/" + submit_id)
+    fetch(BACKEND_BASE_URL + "/api/v1/transcripts/" + submit_id)
       .then(function(response) {
         if (!response.ok) {
           throw new Error("Failed to load transcript");

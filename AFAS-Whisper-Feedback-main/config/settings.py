@@ -6,7 +6,6 @@ including database settings, model paths, and feature extraction parameters.
 """
 
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):

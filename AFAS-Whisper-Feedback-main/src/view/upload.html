@@ -33,7 +33,7 @@ function uploadAudio() {
   formData.append("file", file);
 
   setTimeout(function () {
-    fetch("http://127.0.0.1:8100/api/v1/upload-audio", {
+    fetch(BACKEND_BASE_URL + "/api/v1/upload-audio", {
       method: "POST",
       body: formData
     })
@@ -54,7 +54,7 @@ function uploadAudio() {
         asr_type: "whisper"
       };
 
-      return fetch("http://127.0.0.1:8100/api/v1/submit/", {
+      return fetch(BACKEND_BASE_URL + "/api/v1/submit/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
