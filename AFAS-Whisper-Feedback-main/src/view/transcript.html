@@ -24,8 +24,6 @@
     <thead>
       <tr>
         <th>Word</th>
-        <th>Count</th>
-        <th>Average Probability</th>
         <th>All Probabilities</th>
       </tr>
     </thead>
@@ -71,7 +69,7 @@
             rowWord.innerHTML += "<td>No data</td>";
             lowProbSummary.innerHTML = `
               <tr>
-                <td colspan="4">No low-confidence words found.</td>
+                <td colspan="2">No low-confidence words found.</td>
               </tr>
             `;
             return;
@@ -99,14 +97,10 @@
               if (!lowWordMap[cleanWord]) {
                 lowWordMap[cleanWord] = {
                   displayWord: word.word.trim(),
-                  count: 0,
-                  totalProb: 0,
                   probs: []
                 };
               }
 
-              lowWordMap[cleanWord].count += 1;
-              lowWordMap[cleanWord].totalProb += prob;
               lowWordMap[cleanWord].probs.push(prob.toFixed(2));
             }
           });
@@ -116,22 +110,18 @@
           if (summaryArray.length === 0) {
             lowProbSummary.innerHTML = `
               <tr>
-                <td colspan="4">No low-confidence words found.</td>
+                <td colspan="2">No low-confidence words found.</td>
               </tr>
             `;
           } else {
             summaryArray
               .sort(function(a, b) {
-                return b.count - a.count;
+                return a.displayWord.localeCompare(b.displayWord);
               })
               .forEach(function(item) {
-                const avgProb = item.totalProb / item.count;
-
                 lowProbSummary.innerHTML += `
                   <tr>
                     <td style="color:red;font-weight:bold;">${item.displayWord}</td>
-                    <td>${item.count}</td>
-                    <td>${avgProb.toFixed(2)}</td>
                     <td>${item.probs.join(", ")}</td>
                   </tr>
                 `;
