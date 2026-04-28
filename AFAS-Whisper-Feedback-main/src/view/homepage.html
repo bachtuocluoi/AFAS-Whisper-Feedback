@@ -65,24 +65,28 @@
 	<div class="header">
 	  <a class="logo">AFAS</a>
 	  <div class="header-right">
-		<a id="top-btn" class="log_in">Hello</a>
+		<a id="top-btn" class="log_in"></a>
 		<a href="#about">About</a>
 	  </div>
 	</div>
 
 	<div style="padding-left:20px">
 	  <h1>ASR</h1>
-	  <button id="low-btn" onclick="redirect()" visibility="hidden">Use the system</button>
+	  <button id="low-btn" onclick="redirect()" visibility="hidden">Go to upload</button>
 	</div>
 
 	<script>
+	  const BACKEND_BASE_URL =
+        window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
 	  async function loadUser() {
+	    
 		const token = localStorage.getItem("access_token");
 		const link = document.getElementById("top-btn");
 
 		if (!token) {
 			link.href = "/view/login.html";
 			link.innerHTML = "Log in";
+			document.getElementById("low-btn").style.visibility = "hidden"
 		}
 		else {
 			link.href = "/view/profile.html";

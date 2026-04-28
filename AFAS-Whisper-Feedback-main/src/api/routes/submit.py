@@ -3,6 +3,7 @@ API routes for submit management - handles submit creation and ASR transcription
 """
 
 from datetime import datetime
+from typing import List
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.fluency_service import compute_fluency_metrics
@@ -232,4 +233,21 @@ def get_submit(
     submit: models.Submit = Depends(check_submit_owned_user)
 ):
     return submit
+
+@router.get("/", response_model=list[SubmitResponse])
+def get_all_submission(
+    db: db_dependency,
+    user: models.User = Depends(get_current_user)
+):
+    """
+    Get all submissions made by a user
+    """
+    submissions = (
+        db.query(models.Submit)
+        .filter(models.Submit.user_id == user.id)
+        .order_by(models.Submit.created_at)
+        .all()
+    )
+    
+    return submissions
 

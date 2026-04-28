@@ -54,9 +54,26 @@
     <div id="info" class="info">Loading...</div>
     <button onclick="logout()">Log out</button>
   </div>
+  <br>
+  <div>
+	<h2>All submissions:</h2>
+	<table border="1">
+	  <thead>
+	  <tr>
+	    <th>id</th>
+		<th>Created day</th>
+		<th>Go to transcript</th>
+	  </tr>
+	  </thead>
+	  <tbody id="allSub"></tbody>
+	</table>
+  </div>
 
   <script>
+    const BACKEND_BASE_URL =
+      window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
     async function loadUser() {
+	  
       const token = localStorage.getItem("access_token");
 
       if (!token) {
@@ -66,7 +83,7 @@
       }
 
       try {
-        const response = await fetch("http://127.0.0.1:8100/api/v1/users/me", {
+        const response = await fetch(BACKEND_BASE_URL + "/api/v1/users/me", {
           method: "GET",
           headers: {
             "Authorization": "Bearer " + token
@@ -86,18 +103,61 @@
           <p><b>Username:</b> ${data.username}</p>
           <p><b>Full name:</b> ${data.full_name ?? ""}</p>
         `;
+		
       } catch (error) {
         alert("Cannot connect to server.");
         console.error(error);
       }
     }
+	
+	function loadSubmission(){
+	   const token = localStorage.getItem("access_token");
+	   if(token){
+	      fetch(BACKEND_BASE_URL + "/api/v1/submit", {
+		    method: "GET",
+			headers: {
+			   "Authorization": "Bearer " + token
+			}
+		  })
+		  .then(function(response) {
+            if (!response.ok) {
+              throw new Error("Failed to load submissions");
+            }
+            return response.json();
+          })
+		  .then(function(response) {
+		    const allSub = document.getElementById("allSub");
+			count = 1;
+			response.forEach(function(submit){
+			  allSub.innerHTML += `
+			    <tr>
+				   <td>${count}</td>
+				   <td>${submit.created_at}</td>
+				   <td><button onclick="goToTranscript(${submit.id})">Transcript</button></td>
+			    </tr>
+			  `
+			  count++;
+			});
+		  })
+		  .catch(function(error) {
+            alert("Error loading submissions");
+            console.error(error);
+          });
+	   }
+	}
 
     function logout() {
       localStorage.removeItem("access_token");
       window.location.href = "/view/login.html";
     }
+	
+	function goToTranscript(submit_id) {
+	  localStorage.setItem("submit_id", submit_id);
+	  window.location.href = "/view/transcript.html"
+	}
 
     loadUser();
+	loadSubmission();
   </script>
 </body>
 </html>
