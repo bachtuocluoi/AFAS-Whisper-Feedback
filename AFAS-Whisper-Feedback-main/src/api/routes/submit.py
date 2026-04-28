@@ -3,7 +3,7 @@ API routes for submit management - handles submit creation and ASR transcription
 """
 
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.fluency_service import compute_fluency_metrics
 from src.services.pronunciation_service import compute_pronunciation_metrics
@@ -15,14 +15,16 @@ from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.submit import SubmitCreate, SubmitResponse
 from src.services.asr_service import get_asr_service
+from src.auth.get_user import get_current_user, check_submit_owned_user
 
-router = APIRouter(prefix="/submit", tags=["submit"])
+router = APIRouter(prefix="/submit", tags=["submit"], dependencies=[Depends(get_current_user)])
 
 
 @router.post("/", response_model=SubmitResponse, status_code=201)
 def submit_audio(
     submit: SubmitCreate,
-    db: db_dependency
+    db: db_dependency,
+    user: models.User = Depends(get_current_user)
 ):
     """
     Create submit record from uploaded audio_path, run ASR, save transcripts.
@@ -39,7 +41,7 @@ def submit_audio(
     # 2. Tạo Submit record
     try:
         db_submit = models.Submit(
-            user_id=submit.user_id,
+            user_id=user.id,
             audio_path=submit.audio_path,
             asr_type=submit.asr_type,
             created_at=datetime.now()
@@ -227,13 +229,7 @@ def submit_audio(
 
 @router.get("/{submit_id}", response_model=SubmitResponse)
 def get_submit(
-    submit_id: int,
-    db: db_dependency
+    submit: models.Submit = Depends(check_submit_owned_user)
 ):
-    submit = db.query(models.Submit).filter(models.Submit.id == submit_id).first()
-
-    if not submit:
-        raise HTTPException(status_code=404, detail="Submit not found")
-
     return submit
 

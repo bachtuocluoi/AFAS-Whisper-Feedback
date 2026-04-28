@@ -3,6 +3,18 @@ const BACKEND_BASE_URL =
 
 let dashboardData = null;
 
+const token = localStorage.getItem("access_token");
+	  
+async function loadUser() {
+    if (!token) {
+       alert("User not login.");
+       window.location.href = "/view/login.html";
+       return;
+    }
+}
+
+loadUser();
+
 function format2(val) {
   return Number(val || 0).toFixed(2);
 }
@@ -16,7 +28,12 @@ function loadResult() {
     return;
   }
 
-  fetch(BACKEND_BASE_URL + "/api/v1/result/" + submit_id)
+  fetch(BACKEND_BASE_URL + "/api/v1/result/" + submit_id, {
+	  method: "GET",
+      headers: {
+		 "Authorization": "Bearer " + token
+		}
+	})
     .then(res => {
       if (!res.ok) return res.text().then(t => { throw new Error(t); });
       return res.json();
@@ -94,7 +111,7 @@ function goToTranscript() {
 }
 
 function goBackUpload() {
-  localStorage.clear();
+  localStorage.removeItem("submit_id");
   window.location.href = "/view/upload.html";
 }
 

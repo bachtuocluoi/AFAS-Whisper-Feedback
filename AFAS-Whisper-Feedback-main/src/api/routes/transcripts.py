@@ -2,16 +2,17 @@
 API routes for transcript management.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.transcript import TranscriptCreate, TranscriptResponse
+from src.auth.get_user import get_current_user, check_submit_owned_user
 
-router = APIRouter(prefix="/transcripts", tags=["transcripts"])
+router = APIRouter(prefix="/transcripts", tags=["transcripts"], dependencies=[Depends(get_current_user)])
 
 
-@router.get("/{submit_id}", response_model=List[TranscriptResponse])
+@router.get("/{submit_id}", response_model=List[TranscriptResponse], dependencies=[Depends(check_submit_owned_user)])
 def get_transcripts_by_submit(
     submit_id: int,
     db: db_dependency

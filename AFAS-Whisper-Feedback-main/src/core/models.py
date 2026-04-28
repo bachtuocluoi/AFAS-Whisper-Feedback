@@ -7,6 +7,8 @@ for submissions, transcripts, and feature extraction results.
 
 from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped
+from typing import List
 from src.core.database import Base
 
 
@@ -24,7 +26,7 @@ class Submit(Base):
     __tablename__ = "submit"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), index=True)
     asr_type = Column(String(50), index=True, default="whisper")
     audio_path = Column(String, nullable=False)
     created_at = Column(DateTime)
@@ -35,6 +37,7 @@ class Submit(Base):
     lexical = relationship("Lexical", back_populates="submit", uselist=False)
     pronunciation = relationship("Pronunciation", back_populates="submit", uselist=False)
     feedbacks = relationship("Feedback", back_populates="submit")
+    user = relationship("User", back_populates="submits")
 
 
 class Transcript(Base):
@@ -180,4 +183,22 @@ class Feedback(Base):
 
     # Relationship
     submit = relationship("Submit", back_populates="feedbacks")
+    
+class User(Base):
+    """
+    Model storing users.
+    
+    Attributes:
+        id: Primary key
+        username: User's username
+        hashed_password: Hash password of user
+        full_name: User's full name
+    """
+    __tablename__ = "user"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, nullable=False, index=True)
+    hashed_password = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
 
+    submits: Mapped[List["Submit"]] = relationship(back_populates="user")
