@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.services.result_chart_service import (
@@ -6,8 +6,9 @@ from src.services.result_chart_service import (
     build_lexical_diversity_chart,
     build_pronunciation_bar_chart,
 )
+from src.auth.get_user import get_current_user, check_submit_owned_user
 
-router = APIRouter(prefix="/result", tags=["result"])
+router = APIRouter(prefix="/result", tags=["result"], dependencies=[Depends(get_current_user)])
 
 
 def parse_feedback_text(text: str):
@@ -50,7 +51,7 @@ def parse_feedback_text(text: str):
     return result
 
 
-@router.get("/{submit_id}")
+@router.get("/{submit_id}", dependencies=[Depends(check_submit_owned_user)])
 def get_result_dashboard(submit_id: int, db: db_dependency):
     fluency = db.query(models.Fluency).filter(models.Fluency.submit_id == submit_id).first()
     lexical = db.query(models.Lexical).filter(models.Lexical.submit_id == submit_id).first()

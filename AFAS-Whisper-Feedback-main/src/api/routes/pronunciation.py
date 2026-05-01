@@ -2,15 +2,16 @@
 API routes for pronunciation metrics.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.pronunciation import PronunciationCreate, PronunciationResponse
+from src.auth.get_user import get_current_user, check_submit_owned_user
 
-router = APIRouter(prefix="/pronunciation", tags=["pronunciation"])
+router = APIRouter(prefix="/pronunciation", tags=["pronunciation"], dependencies=[Depends(get_current_user)])
 
 
-@router.get("/{submit_id}", response_model=PronunciationResponse)
+@router.get("/{submit_id}", response_model=PronunciationResponse, dependencies=[Depends(check_submit_owned_user)])
 def get_pronunciation(
     submit_id: int,
     db: db_dependency

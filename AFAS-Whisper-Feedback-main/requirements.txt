@@ -13,8 +13,13 @@ openai-whisper>=20231117
 # Data Processing
 pandas>=2.1.0
 numpy>=1.24.0
+plotly>=6.7.0
 
 # Utilities
 python-multipart>=0.0.6
 requests>=2.31.0
 
+#Auth
+passlib>=1.7.4
+authlib>=1.6.11
+bcrypt==4.3.0

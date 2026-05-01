@@ -2,15 +2,16 @@
 API routes for feedback management.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.feedback import FeedbackCreate, FeedbackResponse
+from src.auth.get_user import get_current_user, check_submit_owned_user
 
-router = APIRouter(prefix="/feedback", tags=["feedback"])
+router = APIRouter(prefix="/feedback", tags=["feedback"], dependencies=[Depends(get_current_user)])
 
 
-@router.get("/{submit_id}", response_model=FeedbackResponse)
+@router.get("/{submit_id}", response_model=FeedbackResponse, dependencies=[Depends(check_submit_owned_user)])
 def get_feedback_by_submit(
     submit_id: int,
     db: db_dependency

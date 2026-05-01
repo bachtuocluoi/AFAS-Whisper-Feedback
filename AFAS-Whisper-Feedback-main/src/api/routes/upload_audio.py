@@ -5,9 +5,10 @@ API route for uploading audio files.
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from src.auth.get_user import get_current_user
 
-router = APIRouter(tags=["upload"])
+router = APIRouter(tags=["upload"], dependencies=[Depends(get_current_user)])
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

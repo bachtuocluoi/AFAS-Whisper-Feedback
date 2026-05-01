@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="eni">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .box {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      width: 360px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 16px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #28a745;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1f7d34;
+    }
+
+    .back-btn {
+      background: #6c757d;
+    }
+
+    .back-btn:hover {
+      background: #545b62;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .success {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Register</h2>
+
+    <input type="text" id="full_name" placeholder="Full name" />
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+
+    <button onclick="register()">Register</button>
+    <button class="back-btn" onclick="goToLogin()">Go to login</button>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    function goToLogin() {
+      window.location.href = "/view/login.html";
+    }
+    const BACKEND_BASE_URL =
+       window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
+    async function register() {
+	  
+      const full_name = document.getElementById("full_name").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const message = document.getElementById("message");
+
+      message.textContent = "";
+      message.className = "message";
+
+      if (!full_name || !username || !password) {
+        message.textContent = "Please enter full name, username, password";
+        message.classList.add("error");
+        return;
+      }
+
+      try {
+        const response = await fetch(BACKEND_BASE_URL + "/api/v1/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            full_name: full_name,
+            username: username,
+            password: password
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          message.textContent = data.detail || "Failed to create account.";
+          message.classList.add("error");
+          return;
+        }
+
+        message.textContent = "Account successfully created. Return to login...";
+        message.classList.add("success");
+
+        setTimeout(() => {
+          window.location.href = "/view/login.html";
+        }, 1500);
+
+      } catch (error) {
+        message.textContent = "Cannot connect to server.";
+        message.classList.add("error");
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>

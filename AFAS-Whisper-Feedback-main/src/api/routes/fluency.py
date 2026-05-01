@@ -2,15 +2,16 @@
 API routes for fluency metrics.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.fluency import FluencyCreate, FluencyResponse
+from src.auth.get_user import get_current_user, check_submit_owned_user
 
-router = APIRouter(prefix="/fluency", tags=["fluency"])
+router = APIRouter(prefix="/fluency", tags=["fluency"], dependencies=[Depends(get_current_user)])
 
 
-@router.get("/{submit_id}", response_model=FluencyResponse)
+@router.get("/{submit_id}", response_model=FluencyResponse, dependencies=[Depends(check_submit_owned_user)])
 def get_fluency(
     submit_id: int,
     db: db_dependency

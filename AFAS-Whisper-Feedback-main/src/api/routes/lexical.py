@@ -2,15 +2,16 @@
 API routes for lexical metrics.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.lexical import LexicalCreate, LexicalResponse
+from src.auth.get_user import get_current_user, check_submit_owned_user
 
-router = APIRouter(prefix="/lexical", tags=["lexical"])
+router = APIRouter(prefix="/lexical", tags=["lexical"], dependencies=[Depends(get_current_user)])
 
 
-@router.get("/{submit_id}", response_model=LexicalResponse)
+@router.get("/{submit_id}", response_model=LexicalResponse, dependencies=[Depends(check_submit_owned_user)])
 def get_lexical(
     submit_id: int,
     db: db_dependency

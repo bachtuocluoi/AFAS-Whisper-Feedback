@@ -39,6 +39,18 @@
   <script>
     const BACKEND_BASE_URL =
       window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
+	  
+	const token = localStorage.getItem("access_token");
+	  
+	async function loadUser() {
+      if (!token) {
+        alert("User not login.");
+        window.location.href = "/view/login.html";
+        return;
+      }
+    }
+
+    loadUser();
 
     function loadTranscript() {
       const submit_id = localStorage.getItem("submit_id");
@@ -49,7 +61,12 @@
         return;
       }
 
-      fetch(BACKEND_BASE_URL + "/api/v1/transcripts/" + submit_id)
+      fetch(BACKEND_BASE_URL + "/api/v1/transcripts/" + submit_id, {
+		method: "GET",
+          headers: {
+		    "Authorization": "Bearer " + token
+		  }
+		})
         .then(function(response) {
           if (!response.ok) {
             throw new Error("Failed to load transcript");

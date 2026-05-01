@@ -17,6 +17,18 @@
   <script>
     const BACKEND_BASE_URL =
       window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
+	  
+	const token = localStorage.getItem("access_token");
+	  
+	async function loadUser() {
+      if (!token) {
+        alert("User not login.");
+        window.location.href = "/view/login.html";
+        return;
+      }
+    }
+
+    loadUser();
       
     function uploadAudio() {
       const fileInput = document.getElementById("audioFile");
@@ -39,7 +51,10 @@
       setTimeout(function () {
         fetch(BACKEND_BASE_URL + "/api/v1/upload-audio", {
           method: "POST",
-          body: formData
+          body: formData,
+		  headers: {
+		    "Authorization": "Bearer " + token
+		  }
         })
         .then(function(response) {
           if (!response.ok) {
@@ -53,7 +68,7 @@
           statusText.innerText = "Processing...";
 
           const submitPayload = {
-            user_id: 1,
+            user_id: 0,
             audio_path: uploadResult.audio_path,
             asr_type: "whisper"
           };
@@ -61,7 +76,8 @@
           return fetch(BACKEND_BASE_URL + "/api/v1/submit/", {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+			  "Authorization": "Bearer " + token
             },
             body: JSON.stringify(submitPayload)
           });

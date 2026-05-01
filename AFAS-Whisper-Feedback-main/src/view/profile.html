@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Profile</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .box {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      width: 380px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .info {
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: red;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: darkred;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>User info</h2>
+    <div id="info" class="info">Loading...</div>
+    <button onclick="logout()">Log out</button>
+  </div>
+  <br>
+  <div>
+	<h2>All submissions:</h2>
+	<table border="1">
+	  <thead>
+	  <tr>
+	    <th>id</th>
+		<th>Created day</th>
+		<th>Go to transcript</th>
+	  </tr>
+	  </thead>
+	  <tbody id="allSub"></tbody>
+	</table>
+  </div>
+
+  <script>
+    const BACKEND_BASE_URL =
+      window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
+    async function loadUser() {
+	  
+      const token = localStorage.getItem("access_token");
+
+      if (!token) {
+        alert("User not login.");
+        window.location.href = "/view/login.html";
+        return;
+      }
+
+      try {
+        const response = await fetch(BACKEND_BASE_URL + "/api/v1/users/me", {
+          method: "GET",
+          headers: {
+            "Authorization": "Bearer " + token
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.detail || "Session expired.");
+          localStorage.removeItem("access_token");
+          window.location.href = "/view/login.html";
+          return;
+        }
+
+        document.getElementById("info").innerHTML = `
+          <p><b>Username:</b> ${data.username}</p>
+          <p><b>Full name:</b> ${data.full_name ?? ""}</p>
+        `;
+		
+      } catch (error) {
+        alert("Cannot connect to server.");
+        console.error(error);
+      }
+    }
+	
+	function loadSubmission(){
+	   const token = localStorage.getItem("access_token");
+	   if(token){
+	      fetch(BACKEND_BASE_URL + "/api/v1/submit", {
+		    method: "GET",
+			headers: {
+			   "Authorization": "Bearer " + token
+			}
+		  })
+		  .then(function(response) {
+            if (!response.ok) {
+              throw new Error("Failed to load submissions");
+            }
+            return response.json();
+          })
+		  .then(function(response) {
+		    const allSub = document.getElementById("allSub");
+			count = 1;
+			response.forEach(function(submit){
+			  allSub.innerHTML += `
+			    <tr>
+				   <td>${count}</td>
+				   <td>${submit.created_at}</td>
+				   <td><button onclick="goToTranscript(${submit.id})">Transcript</button></td>
+			    </tr>
+			  `
+			  count++;
+			});
+		  })
+		  .catch(function(error) {
+            alert("Error loading submissions");
+            console.error(error);
+          });
+	   }
+	}
+
+    function logout() {
+      localStorage.removeItem("access_token");
+      window.location.href = "/view/login.html";
+    }
+	
+	function goToTranscript(submit_id) {
+	  localStorage.setItem("submit_id", submit_id);
+	  window.location.href = "/view/transcript.html"
+	}
+
+    loadUser();
+	loadSubmission();
+  </script>
+</body>
+</html>
