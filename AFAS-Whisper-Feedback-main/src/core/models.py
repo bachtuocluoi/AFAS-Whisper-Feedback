@@ -5,6 +5,7 @@ This module defines all SQLAlchemy ORM models representing the database schema
 for submissions, transcripts, and feature extraction results.
 """
 
+import datetime
 from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped
@@ -202,3 +203,40 @@ class User(Base):
     full_name = Column(String, nullable=True)
 
     submits: Mapped[List["Submit"]] = relationship(back_populates="user")
+
+
+
+class Score(Base):
+    """
+    Model storing speaking assessment scores.
+
+    This table stores:
+    - Fluency score
+    - Lexical score
+    - Pronunciation score
+    - Overall speaking score
+
+    Attributes:
+        id: Primary key
+        submit_id: Related submission ID
+        user_id: Related user ID
+        fluency_score: Fluency evaluation score
+        lexical_score: Vocabulary / lexical score
+        pronunciation_score: Pronunciation evaluation score
+        overall_score: Final combined speaking score
+        created_at: Timestamp when score was created
+    """
+    
+
+    __tablename__ = "scores"
+
+    id = Column(Integer, primary_key=True, index=True)
+    submit_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, nullable=False)
+
+    fluency_score = Column(Float, nullable=True)
+    lexical_score = Column(Float, nullable=True)
+    pronunciation_score = Column(Float, nullable=True)
+    overall_score = Column(Float, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
