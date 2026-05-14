@@ -195,52 +195,9 @@ function renderShapTable() {
 }
 
 
-function renderWaterfall() {
-  const shap = shapData?.overall;
 
-  if (!shap || !Array.isArray(shap.features)) {
-    console.warn("No overall SHAP data for waterfall.");
-    return;
-  }
 
-  const topFeatures = shap.features.slice(0, 10);
 
-  const x = [];
-  const y = [];
-  const measure = [];
-
-  x.push("Base");
-  y.push(shap.base_value);
-  measure.push("absolute");
-
-  topFeatures.forEach(item => {
-    x.push(item.feature);
-    y.push(item.shap_value);
-    measure.push("relative");
-  });
-
-  x.push("Prediction");
-  y.push(shap.prediction);
-  measure.push("total");
-
-  const data = [{
-    type: "waterfall",
-    x: x,
-    y: y,
-    measure: measure
-  }];
-
-  const layout = {
-    title: "Overall Score Waterfall",
-    showlegend: false
-  };
-
-  Plotly.newPlot(
-    "waterfallChart",
-    data,
-    layout
-  );
-}
 
 
 function goBackResult() {
