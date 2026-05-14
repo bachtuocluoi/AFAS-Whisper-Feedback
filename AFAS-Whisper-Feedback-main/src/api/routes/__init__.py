@@ -3,7 +3,7 @@ API routes package.
 """
 
 from fastapi import APIRouter
-from . import transcripts, fluency, lexical, pronunciation, feedback, analytics, submit, upload_audio, config, result, auth, user
+from . import transcripts, fluency, lexical, pronunciation, feedback, analytics, submit, upload_audio, config, result, auth, user, score
 
 # Create main API router
 api_router = APIRouter()
@@ -21,4 +21,5 @@ api_router.include_router(config.router)
 api_router.include_router(result.router)
 api_router.include_router(auth.router)
 api_router.include_router(user.router)
+api_router.include_router(score.router)
 

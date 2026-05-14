@@ -19,6 +19,16 @@ function format2(val) {
   return Number(val || 0).toFixed(2);
 }
 
+  function handleUnauthorized() {
+    alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+  
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("submit_id");
+  
+    window.location.href = "/view/login.html";
+  }
+
 function loadResult() {
   const submit_id = localStorage.getItem("submit_id");
 
@@ -114,6 +124,30 @@ function goBackUpload() {
   localStorage.removeItem("submit_id");
   window.location.href = "/view/upload.html";
 }
+
+
+function goToScore() {
+  const submit_id = localStorage.getItem("submit_id");
+
+  if (!submit_id) {
+    alert("No submit_id. Please upload audio again.");
+    window.location.href = "/view/upload.html";
+    return;
+  }
+
+  window.location.href = "/view/score.html";
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("goToScoreBtn");
+  
+    if (btn) {
+      btn.addEventListener("click", goToScore);
+    } else {
+      console.error("Button goToScoreBtn not found");
+    }
+  });
+}
+
 
 
 loadResult();

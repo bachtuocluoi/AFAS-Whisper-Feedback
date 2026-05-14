@@ -202,7 +202,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
 
-    submits: Mapped[List["Submit"]] = relationship(back_populates="user")
+    submits: Mapped[List["Submit"]] = relationship("Submit", back_populates="user")
 
 
 
@@ -224,6 +224,7 @@ class Score(Base):
         lexical_score: Vocabulary / lexical score
         pronunciation_score: Pronunciation evaluation score
         overall_score: Final combined speaking score
+        shap_values: JSON string storing local SHAP explanation
         created_at: Timestamp when score was created
     """
     
@@ -239,4 +240,7 @@ class Score(Base):
     pronunciation_score = Column(Float, nullable=True)
     overall_score = Column(Float, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    shap_values = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.datetime.now)
+
