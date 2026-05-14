@@ -129,7 +129,6 @@ function loadScorePage() {
 
       renderScores();
       renderShapTable();
-      renderWaterfall();
 
     })
 
@@ -196,7 +195,10 @@ function renderShapTable() {
 
 
 
-
+function goBackUpload() {
+  localStorage.removeItem("submit_id");
+  window.location.href = "/view/upload.html";
+}
 
 
 
