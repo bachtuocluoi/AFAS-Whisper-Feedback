@@ -125,9 +125,12 @@ function goBackUpload() {
   window.location.href = "/view/upload.html";
 }
 
-
 function goToScore() {
-  const submit_id = localStorage.getItem("submit_id");
+  const submit_id =
+    new URLSearchParams(window.location.search).get("submit_id") ||
+    localStorage.getItem("submit_id");
+
+  console.log("GO TO SCORE submit_id =", submit_id);
 
   if (!submit_id) {
     alert("No submit_id. Please upload audio again.");
@@ -135,19 +138,9 @@ function goToScore() {
     return;
   }
 
-  window.location.href = "/view/score.html";
+  localStorage.setItem("submit_id", submit_id);
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const btn = document.getElementById("goToScoreBtn");
-  
-    if (btn) {
-      btn.addEventListener("click", goToScore);
-    } else {
-      console.error("Button goToScoreBtn not found");
-    }
-  });
+  window.location.href = `/view/score.html?submit_id=${submit_id}`;
 }
-
-
 
 loadResult();
