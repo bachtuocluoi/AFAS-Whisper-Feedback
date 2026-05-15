@@ -96,6 +96,11 @@
     }
     const BACKEND_BASE_URL =
        window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
+	   
+	const token = localStorage.getItem("access_token");
+	if(token){
+	  window.location.href = "/view/profile.html";
+	}
     async function register() {
 	  
       const full_name = document.getElementById("full_name").value.trim();

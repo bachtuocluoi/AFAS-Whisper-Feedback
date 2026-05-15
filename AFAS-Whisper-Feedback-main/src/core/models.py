@@ -239,4 +239,4 @@ class Score(Base):
     pronunciation_score = Column(Float, nullable=True)
     overall_score = Column(Float, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

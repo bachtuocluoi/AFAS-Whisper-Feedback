@@ -1,17 +1,4 @@
-const BACKEND_BASE_URL =
-  window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
-
 let dashboardData = null;
-
-const token = localStorage.getItem("access_token");
-	  
-async function loadUser() {
-    if (!token) {
-       alert("User not login.");
-       window.location.href = "/view/login.html";
-       return;
-    }
-}
 
 loadUser();
 
@@ -115,5 +102,8 @@ function goBackUpload() {
   window.location.href = "/view/upload.html";
 }
 
+function goToHomepage() {
+  window.location.href = "/view/homepage.html";
+}
 
 loadResult();
