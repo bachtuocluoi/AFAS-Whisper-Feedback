@@ -14,6 +14,8 @@ class ScoreBase(BaseModel):
         lexical_score: Vocabulary / lexical score
         pronunciation_score: Pronunciation evaluation score
         overall_score: Final combined speaking score
+        shap_values: Local SHAP explanation stored as JSON string
+        
     """
     
     id: int
@@ -23,6 +25,7 @@ class ScoreBase(BaseModel):
     lexical_score: Optional[float] = None
     pronunciation_score: Optional[float] = None
     overall_score: Optional[float] = None
+    shap_values: Optional[str] = None
 
 
 class ScoreCreate(ScoreBase):

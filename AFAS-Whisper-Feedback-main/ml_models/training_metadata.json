@@ -1,0 +1,40 @@
+{
+    "n_splits": 5,
+    "random_state": 42,
+    "features": [
+        "flu_speech_rate",
+        "flu_pause_ratio",
+        "lex_TTR",
+        "lex_MSTTR",
+        "lex_A1",
+        "lex_A2",
+        "lex_B1",
+        "lex_B2",
+        "lex_C1",
+        "pro_0%-50%",
+        "pro_50%-70%",
+        "pro_70%-85%",
+        "pro_85%-95%",
+        "pro_95%-100%"
+    ],
+    "targets": {
+        "overall": "avg_overall",
+        "fluency": "avg_fluency",
+        "lexical": "avg_lexical",
+        "pronunciation": "avg_pronunciation"
+    },
+    "model_params": {
+        "iterations": 300,
+        "learning_rate": 0.05,
+        "depth": 4,
+        "loss_function": "RMSE",
+        "random_seed": 42,
+        "verbose": false
+    },
+    "saved_models": {
+        "overall": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\overall_score_model.cbm",
+        "fluency": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\fluency_score_model.cbm",
+        "lexical": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\lexical_score_model.cbm",
+        "pronunciation": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\pronunciation_score_model.cbm"
+    }
+}

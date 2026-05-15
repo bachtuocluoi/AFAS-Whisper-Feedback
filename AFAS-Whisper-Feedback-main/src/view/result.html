@@ -14,7 +14,7 @@
 	  padding: 20px 10px;
 	  column-span: all;
 	}
-
+  <!-- <script src="/view/result.js?v=11"></script> -->
 	.header a {
 	  float: left;
 	  color: black;
@@ -74,7 +74,8 @@
     <div class="top-actions">
       <button onclick="goToTranscript()">Back to Transcript</button>
       <button onclick="goBackUpload()">Upload Another Audio</button>
-	  <button onclick="goToHomepage()">Return to Homepage</button>
+      <button type="button" onclick="goToScore()">Go to Score Dashboard</button>
+      <button onclick="goToHomepage()">Return to Homepage</button>
     </div>
 
     <!-- FLUENCY -->
@@ -148,6 +149,8 @@
         <h3>Pronunciation Feedback</h3>
         <p id="pronunciationFeedbackText">Loading...</p>
       </div>
+
+      
     </section>
 
   </div>

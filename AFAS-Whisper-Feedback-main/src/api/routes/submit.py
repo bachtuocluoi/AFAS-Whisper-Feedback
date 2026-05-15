@@ -3,7 +3,7 @@ API routes for submit management - handles submit creation and ASR transcription
 """
 
 from datetime import datetime
-from typing import List
+import json
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.fluency_service import compute_fluency_metrics
@@ -17,6 +17,7 @@ from src.core import models
 from src.schemas.submit import SubmitCreate, SubmitResponse
 from src.services.asr_service import get_asr_service
 from src.auth.get_user import get_current_user, check_submit_owned_user
+from src.services.score_service import predict_scores_with_shap_from_features
 
 router = APIRouter(prefix="/submit", tags=["submit"], dependencies=[Depends(get_current_user)])
 
@@ -223,6 +224,40 @@ def submit_audio(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to save feedback: {str(e)}"
+        )
+    
+
+    # 9. Predict score and compute SHAP for this submission
+    try:
+        score_result = predict_scores_with_shap_from_features(
+            fluency_data=fluency_data,
+            lexical_cefr=lexical_cefr,
+            lexical_diversity=lexical_diversity,
+            pronunciation_data=pronunciation_data
+        )
+
+        score_data = score_result["scores"]
+        shap_data = score_result["shap"]
+
+        db_score = models.Score(
+            submit_id=db_submit.id,
+            user_id=db_submit.user_id,
+            fluency_score=score_data["fluency_score"],
+            lexical_score=score_data["lexical_score"],
+            pronunciation_score=score_data["pronunciation_score"],
+            overall_score=score_data["overall_score"],
+            shap_values=json.dumps(shap_data, ensure_ascii=False)
+        )
+
+        db.add(db_score)
+        db.commit()
+        db.refresh(db_score)
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to predict/save score and SHAP: {str(e)}"
         )
 
     return db_submit

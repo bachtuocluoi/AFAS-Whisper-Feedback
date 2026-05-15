@@ -1,0 +1,16 @@
+[
+    "flu_speech_rate",
+    "flu_pause_ratio",
+    "lex_TTR",
+    "lex_MSTTR",
+    "lex_A1",
+    "lex_A2",
+    "lex_B1",
+    "lex_B2",
+    "lex_C1",
+    "pro_0%-50%",
+    "pro_50%-70%",
+    "pro_70%-85%",
+    "pro_85%-95%",
+    "pro_95%-100%"
+]

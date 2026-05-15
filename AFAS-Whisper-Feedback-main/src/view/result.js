@@ -6,6 +6,16 @@ function format2(val) {
   return Number(val || 0).toFixed(2);
 }
 
+  function handleUnauthorized() {
+    alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+  
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("submit_id");
+  
+    window.location.href = "/view/login.html";
+  }
+
 function loadResult() {
   const submit_id = localStorage.getItem("submit_id");
 
@@ -104,6 +114,24 @@ function goBackUpload() {
 
 function goToHomepage() {
   window.location.href = "/view/homepage.html";
+}
+
+function goToScore() {
+  const submit_id =
+    new URLSearchParams(window.location.search).get("submit_id") ||
+    localStorage.getItem("submit_id");
+
+  console.log("GO TO SCORE submit_id =", submit_id);
+
+  if (!submit_id) {
+    alert("No submit_id. Please upload audio again.");
+    window.location.href = "/view/upload.html";
+    return;
+  }
+
+  localStorage.setItem("submit_id", submit_id);
+
+  window.location.href = `/view/score.html?submit_id=${submit_id}`;
 }
 
 loadResult();

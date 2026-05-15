@@ -35,7 +35,8 @@ def create_score(
         fluency_score=score.fluency_score,
         lexical_score=score.lexical_score,
         pronunciation_score=score.pronunciation_score,
-        overall_score=score.overall_score
+        overall_score=score.overall_score,
+        shap_values=score.shap_values
     )
 
     db.add(db_score)
