@@ -6,16 +6,6 @@ function format2(val) {
   return Number(val || 0).toFixed(2);
 }
 
-  function handleUnauthorized() {
-    alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-  
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("submit_id");
-  
-    window.location.href = "/view/login.html";
-  }
-
 function loadResult() {
   const submit_id = localStorage.getItem("submit_id");
 

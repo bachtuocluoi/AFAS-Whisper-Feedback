@@ -1,30 +1,13 @@
-const BACKEND_BASE_URL =
-  window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
-
-
+loadUser();
 
 let scoreData = null;
 let shapData = null;
-
-const token = localStorage.getItem("access_token");
 
 
 function getSubmitId() {
   const params = new URLSearchParams(window.location.search);
   return params.get("submit_id") || localStorage.getItem("submit_id");
 }
-
-
-function loadUser() {
-  if (!token) {
-    alert("User not login.");
-    window.location.href = "/view/login.html";
-    return false;
-  }
-
-  return true;
-}
-
 
 function format2(val) {
   if (val === null || val === undefined || val === "") {
@@ -39,18 +22,6 @@ function format2(val) {
 
   return num.toFixed(2);
 }
-
-
-function handleUnauthorized() {
-  alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("token");
-  localStorage.removeItem("submit_id");
-
-  window.location.href = "/view/login.html";
-}
-
 
 function parseShapValues(rawShapValues) {
   if (!rawShapValues) {
@@ -204,6 +175,10 @@ function goBackUpload() {
 
 function goBackResult() {
   window.location.href = "/view/result.html";
+}
+
+function goToHomepage() {
+  window.location.href = "/view/homepage.html";
 }
 
 

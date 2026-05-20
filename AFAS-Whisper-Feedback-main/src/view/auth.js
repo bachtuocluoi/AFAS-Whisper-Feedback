@@ -17,3 +17,13 @@ function loadUser() {
 	return token;
 }
 
+function handleUnauthorized() {
+  alert("Session expired. Please log in again");
+
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("submit_id");
+
+  window.location.href = "/view/login.html";
+}
+

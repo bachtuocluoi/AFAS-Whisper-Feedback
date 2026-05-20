@@ -1,3 +1,5 @@
+loadUser();
+
 const synth = window.speechSynthesis;
 
 const inputForm = document.querySelector("form");

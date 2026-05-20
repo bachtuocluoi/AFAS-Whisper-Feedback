@@ -39,6 +39,7 @@ class Submit(Base):
     pronunciation = relationship("Pronunciation", back_populates="submit", uselist=False)
     feedbacks = relationship("Feedback", back_populates="submit")
     user = relationship("User", back_populates="submits")
+    scores = relationship("Score", back_populates="submit")
 
 
 class Transcript(Base):
@@ -232,7 +233,7 @@ class Score(Base):
     __tablename__ = "scores"
 
     id = Column(Integer, primary_key=True, index=True)
-    submit_id = Column(Integer, nullable=False)
+    submit_id = Column(Integer, ForeignKey("submit.id"), index=True, nullable=False)
     user_id = Column(Integer, nullable=False)
 
     fluency_score = Column(Float, nullable=True)
@@ -243,3 +244,5 @@ class Score(Base):
     shap_values = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.now)
+    
+    submit = relationship("Submit", back_populates="scores")
