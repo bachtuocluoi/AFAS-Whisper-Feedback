@@ -1,94 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>AI Speaking Score</title>
+    <meta charset="UTF-8" />
+    <title>AI Speaking Score</title>
 
-  <link rel="stylesheet" href="/view/score.css">
+    <link rel="stylesheet" href="/view/score.css">
 
-  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-  <script src="/api/v1/view-config.js"></script>
-  <script src="/view/auth.js"></script>
-  <script src="/view/score.js?v=7"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="/api/v1/view-config.js"></script>
+    <script src="/view/auth.js"></script>
+    <script src="/view/score.js?v=7"></script>
 </head>
 
 <body>
 
-<div class="container">
+    <div class="container">
 
-  <h1>AI Speaking Score Dashboard</h1>
+        <h1>AI Speaking Score Dashboard</h1>
 
-  <div class="top-actions">
-    <button onclick="goBackResult()">Back to Result</button>
-    <button onclick="goBackUpload()">Upload Another Audio</button>
-	<button onclick="goToHomepage()">Return to Homepage</button>
-  </div>
-
-  <!-- SCORE CARD -->
-  <section class="card">
-
-    <h2>Predicted Scores</h2>
-
-    <div class="score-grid">
-
-      <div class="score-box">
-        <div class="score-title">Overall</div>
-        <div class="score-value" id="overallScore">
-          -
+        <div class="top-actions">
+            <button onclick="goBackResult()">Back to Result</button>
+            <button onclick="goBackUpload()">Upload Another Audio</button>
+            <button onclick="goToHomepage()">Return to Homepage</button>
         </div>
-      </div>
 
-      <div class="score-box">
-        <div class="score-title">Fluency</div>
-        <div class="score-value" id="fluencyScore">
-          -
-        </div>
-      </div>
+        <!-- SCORE CARD -->
+        <section class="card">
 
-      <div class="score-box">
-        <div class="score-title">Lexical</div>
-        <div class="score-value" id="lexicalScore">
-          -
-        </div>
-      </div>
+            <h2>Predicted Scores</h2>
 
-      <div class="score-box">
-        <div class="score-title">Pronunciation</div>
-        <div class="score-value" id="pronunciationScore">
-          -
-        </div>
-      </div>
+            <div class="score-grid">
+
+                <div class="score-box">
+                    <div class="score-title">Overall</div>
+                    <div class="score-value" id="overallScore">
+                        -
+                    </div>
+                </div>
+
+                <div class="score-box">
+                    <div class="score-title">Fluency</div>
+                    <div class="score-value" id="fluencyScore">
+                        -
+                    </div>
+                </div>
+
+                <div class="score-box">
+                    <div class="score-title">Lexical</div>
+                    <div class="score-value" id="lexicalScore">
+                        -
+                    </div>
+                </div>
+
+                <div class="score-box">
+                    <div class="score-title">Pronunciation</div>
+                    <div class="score-value" id="pronunciationScore">
+                        -
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- SHAP TABLE -->
+        <section class="card">
+
+            <h2>Feature Contribution</h2>
+
+            <table class="shap-table">
+
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Value</th>
+                        <th>SHAP</th>
+                        <th>Impact</th>
+                    </tr>
+                </thead>
+
+                <tbody id="shapTableBody">
+                </tbody>
+
+            </table>
+
+        </section>
 
     </div>
-
-  </section>
-
-
-
-  <!-- SHAP TABLE -->
-  <section class="card">
-
-    <h2>Feature Contribution</h2>
-
-    <table class="shap-table">
-
-      <thead>
-        <tr>
-          <th>Feature</th>
-          <th>Value</th>
-          <th>SHAP</th>
-          <th>Impact</th>
-        </tr>
-      </thead>
-
-      <tbody id="shapTableBody">
-      </tbody>
-
-    </table>
-
-  </section>
-
-</div>
 
 
 </body>

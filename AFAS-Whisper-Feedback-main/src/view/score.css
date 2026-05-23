@@ -2,78 +2,68 @@ body {
     font-family: Arial;
     background: #f5f6fa;
     margin: 0;
-  }
-  
-  .container {
+}
+
+.container {
     width: 90%;
     margin: 20px auto;
-  }
-  
-  .card {
+}
+
+.card {
     background: white;
     padding: 20px;
     border-radius: 12px;
     margin-bottom: 20px;
-  }
-  
-  .score-grid {
+}
+
+.score-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
-  }
-  
-  .score-box {
-    background: linear-gradient(
-      135deg,
-      #4f46e5,
-      #7c3aed
-    );
-  
+}
+
+.score-box {
+    background: linear-gradient( 135deg, #4f46e5, #7c3aed );
     color: white;
-  
     padding: 25px;
-  
     border-radius: 16px;
-  
     text-align: center;
-  }
-  
-  .score-title {
+}
+
+.score-title {
     font-size: 18px;
     margin-bottom: 10px;
-  }
-  
-  .score-value {
+}
+
+.score-value {
     font-size: 40px;
     font-weight: bold;
-  }
-  
-  .shap-table {
+}
+
+.shap-table {
     width: 100%;
     border-collapse: collapse;
-  }
-  
-  .shap-table th,
-  .shap-table td {
-    border: 1px solid #ddd;
-    padding: 12px;
-  }
-  
-  .shap-table th {
-    background: #eef2ff;
-  }
-  
-  button {
+}
+
+    .shap-table th,
+    .shap-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+    }
+
+    .shap-table th {
+        background: #eef2ff;
+    }
+
+button {
     padding: 10px 16px;
     border: none;
     border-radius: 8px;
     background: #4f46e5;
     color: white;
     cursor: pointer;
-  }
-  
-  .top-actions {
-    margin-bottom: 20px;
-  }
+}
 
-  
+.top-actions {
+    margin-bottom: 20px;
+}

@@ -1,220 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Transcript</title>
-<style>
-		* {box-sizing: border-box;}
+    <meta charset="UTF-8" />
+    <title>Transcript</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-		body { 
-		  margin: 0;
-		  font-family: Arial, Helvetica, sans-serif;
-		}
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
 
-		.header {
-		  overflow: hidden;
-		  background-color: #f1f1f1;
-		  padding: 20px 10px;
-		}
+        .header {
+            overflow: hidden;
+            background-color: #f1f1f1;
+            padding: 20px 10px;
+        }
 
-		.header a {
-		  float: left;
-		  color: black;
-		  text-align: center;
-		  padding: 12px;
-		  text-decoration: none;
-		  font-size: 18px; 
-		  line-height: 25px;
-		  border-radius: 4px;
-		}
+            .header a {
+                float: left;
+                color: black;
+                text-align: center;
+                padding: 12px;
+                text-decoration: none;
+                font-size: 18px;
+                line-height: 25px;
+                border-radius: 4px;
+            }
 
-		.header a.logo {
-		  font-size: 25px;
-		  font-weight: bold;
-		}
+                .header a.logo {
+                    font-size: 25px;
+                    font-weight: bold;
+                }
 
-		.header a:hover {
-		  background-color: #ddd;
-		  color: black;
-		}
+                .header a:hover {
+                    background-color: #ddd;
+                    color: black;
+                }
 
-		.header a.log_in {
-		  background-color: dodgerblue;
-		  color: white;
-		}
+                .header a.log_in {
+                    background-color: dodgerblue;
+                    color: white;
+                }
 
-		.header-right {
-		  float: right;
-		}
+        .header-right {
+            float: right;
+        }
 
-		@media screen and (max-width: 500px) {
-		  .header a {
-			float: none;
-			display: block;
-			text-align: left;
-		  }
-		  
-		  .header-right {
-			float: none;
-		  }
-		}
-	</style>
+        @media screen and (max-width: 500px) {
+            .header a {
+                float: none;
+                display: block;
+                text-align: left;
+            }
+
+            .header-right {
+                float: none;
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <div class="header">
-	 <a href="/view/homepage.html" class="logo">AFAS</a>
-	 <div class="header-right">
-	   <a href="/view/profile.html" class="log_in">Profile</a>
-	   <a href="#about">About</a>
-	 </div>
-	</div>
+    <div class="header">
+        <a href="/view/homepage.html" class="logo">AFAS</a>
+        <div class="header-right">
+            <a href="/view/profile.html" class="log_in">Profile</a>
+            <a href="#about">About</a>
+        </div>
+    </div>
 
-  <h2>Transcript</h2>
+    <h2>Transcript</h2>
 
-  <div id="transcriptLine" style="font-size: 20px; line-height: 1.8; margin-bottom: 20px;"></div>
-  
-  <table border="1" cellpadding="8" cellspacing="0">
-    <tbody>
-      <tr id="rowWord"></tr>
-      <tr id="rowProb"></tr>
-    </tbody>
-  </table>
+    <div id="transcriptLine" style="font-size: 20px; line-height: 1.8; margin-bottom: 20px;"></div>
 
-  <br>
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tbody>
+            <tr id="rowWord"></tr>
+            <tr id="rowProb"></tr>
+        </tbody>
+    </table>
 
-  <h3>Summary of Frequently Low-Confidence Words</h3>
-  <table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-      <tr>
-        <th>Word</th>
-        <th>All Probabilities</th>
-      </tr>
-    </thead>
-    <tbody id="lowProbSummary"></tbody>
-  </table>
+    <br>
 
-  <br>
+    <h3>Summary of Frequently Low-Confidence Words</h3>
+    <table border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Word</th>
+                <th>All Probabilities</th>
+            </tr>
+        </thead>
+        <tbody id="lowProbSummary"></tbody>
+    </table>
 
-  <button onclick="goToResult()">Go to Result</button>
-  <button onclick="goBackUpload()">Upload Another Audio</button>
+    <br>
 
-  <script src="/api/v1/view-config.js"></script>
-  <script src="/view/auth.js"></script>
-  <script>
+    <button onclick="goToResult()">Go to Result</button>
+    <button onclick="goBackUpload()">Upload Another Audio</button>
 
-    loadUser();
+    <script src="/api/v1/view-config.js"></script>
+    <script src="/view/auth.js"></script>
+    <script>
 
-    function loadTranscript() {
-      const submit_id = localStorage.getItem("submit_id");
+        loadUser();
 
-      if (!submit_id) {
-        alert("No submit_id found.");
-        window.location.href = "/view/upload.html";
-        return;
-      }
+        function loadTranscript() {
+            const submit_id = localStorage.getItem("submit_id");
 
-      fetch(BACKEND_BASE_URL + "/api/v1/transcripts/" + submit_id, {
-		method: "GET",
-          headers: {
-		    "Authorization": "Bearer " + token
-		  }
-		})
-        .then(function(response) {
-          if (!response.ok) {
-            throw new Error("Failed to load transcript");
-          }
-          return response.json();
-        })
-        .then(function(data) {
-          const rowWord = document.getElementById("rowWord");
-          const rowProb = document.getElementById("rowProb");
-          const lowProbSummary = document.getElementById("lowProbSummary");
-
-          rowWord.innerHTML = "<th>Word</th>";
-          rowProb.innerHTML = "<th>Probability</th>";
-          lowProbSummary.innerHTML = "";
-
-          if (!data || data.length === 0) {
-            rowWord.innerHTML += "<td>No data</td>";
-            lowProbSummary.innerHTML = `
-              <tr>
-                <td colspan="2">No low-confidence words found.</td>
-              </tr>
-            `;
-            return;
-          }
-
-          const lowWordMap = {};
-
-          data.forEach(function(word) {
-            const prob = Number(word.prob);
-            const isLow = prob < 0.5;
-
-            rowWord.innerHTML +=
-              `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
-                ${word.word}
-              </td>`;
-
-            rowProb.innerHTML +=
-              `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
-                ${prob.toFixed(2)}
-              </td>`;
-
-            if (isLow) {
-              const cleanWord = String(word.word).trim().toLowerCase();
-
-              if (!lowWordMap[cleanWord]) {
-                lowWordMap[cleanWord] = {
-                  displayWord: word.word.trim(),
-                  probs: []
-                };
-              }
-
-              lowWordMap[cleanWord].probs.push(prob.toFixed(2));
+            if (!submit_id) {
+                alert("No submit_id found.");
+                window.location.href = "/view/upload.html";
+                return;
             }
-          });
 
-          const summaryArray = Object.values(lowWordMap);
+            fetch(BACKEND_BASE_URL + "/api/v1/transcripts/" + submit_id, {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Failed to load transcript");
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    const rowWord = document.getElementById("rowWord");
+                    const rowProb = document.getElementById("rowProb");
+                    const lowProbSummary = document.getElementById("lowProbSummary");
 
-          if (summaryArray.length === 0) {
-            lowProbSummary.innerHTML = `
-              <tr>
-                <td colspan="2">No low-confidence words found.</td>
-              </tr>
-            `;
-          } else {
-            summaryArray
-              .sort(function(a, b) {
-                return a.displayWord.localeCompare(b.displayWord);
-              })
-              .forEach(function(item) {
-                lowProbSummary.innerHTML += `
+                    rowWord.innerHTML = "<th>Word</th>";
+                    rowProb.innerHTML = "<th>Probability</th>";
+                    lowProbSummary.innerHTML = "";
+
+                    if (!data || data.length === 0) {
+                        rowWord.innerHTML += "<td>No data</td>";
+                        lowProbSummary.innerHTML = `
                   <tr>
-                    <td style="color:red;font-weight:bold;">${item.displayWord}</td>
-                    <td>${item.probs.join(", ")}</td>
+                    <td colspan="2">No low-confidence words found.</td>
                   </tr>
                 `;
-              });
-          }
-        })
-        .catch(function(error) {
-          alert("Error loading transcript");
-          console.error(error);
-        });
-    }
+                        return;
+                    }
 
-    function goToResult() {
-      window.location.href = "/view/result.html";
-    }
+                    const lowWordMap = {};
 
-    function goBackUpload() {
-      localStorage.removeItem("submit_id");
-      window.location.href = "/view/upload.html";
-    }
+                    data.forEach(function (word) {
+                        const prob = Number(word.prob);
+                        const isLow = prob < 0.5;
 
-    loadTranscript();
-  </script>
+                        rowWord.innerHTML +=
+                            `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
+                    ${word.word}
+                  </td>`;
+
+                        rowProb.innerHTML +=
+                            `<td style="${isLow ? 'color:red;font-weight:bold;' : ''}">
+                    ${prob.toFixed(2)}
+                  </td>`;
+
+                        if (isLow) {
+                            const cleanWord = String(word.word).trim().toLowerCase();
+
+                            if (!lowWordMap[cleanWord]) {
+                                lowWordMap[cleanWord] = {
+                                    displayWord: word.word.trim(),
+                                    probs: []
+                                };
+                            }
+
+                            lowWordMap[cleanWord].probs.push(prob.toFixed(2));
+                        }
+                    });
+
+                    const summaryArray = Object.values(lowWordMap);
+
+                    if (summaryArray.length === 0) {
+                        lowProbSummary.innerHTML = `
+                  <tr>
+                    <td colspan="2">No low-confidence words found.</td>
+                  </tr>
+                `;
+                    } else {
+                        summaryArray
+                            .sort(function (a, b) {
+                                return a.displayWord.localeCompare(b.displayWord);
+                            })
+                            .forEach(function (item) {
+                                lowProbSummary.innerHTML += `
+                      <tr>
+                        <td style="color:red;font-weight:bold;">${item.displayWord}</td>
+                        <td>${item.probs.join(", ")}</td>
+                      </tr>
+                    `;
+                            });
+                    }
+                })
+                .catch(function (error) {
+                    alert("Error loading transcript");
+                    console.error(error);
+                });
+        }
+
+        function goToResult() {
+            window.location.href = "/view/result.html";
+        }
+
+        function goBackUpload() {
+            localStorage.removeItem("submit_id");
+            window.location.href = "/view/upload.html";
+        }
+
+        loadTranscript();
+    </script>
 
 </body>
 </html>
