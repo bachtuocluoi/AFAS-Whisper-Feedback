@@ -1,5 +1,7 @@
 # AFAS - Automatic Feedback for Speaking
 
+**Note**: A lot of features are being developed, but this README is not being regularly updated. This means some of the things written in this README are not entirely accurate.
+
 A comprehensive system for automated speech assessment and feedback generation using Whisper ASR and advanced feature extraction algorithms.
 
 ## 📋 Table of Contents
@@ -177,16 +179,16 @@ CEFR_DICT_PATH=data/oxford_cerf.csv
 
 ```bash
 # Development server
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8100
 
 # Production server
-uvicorn src.main:app --host 0.0.0.0 --port 8000
+uvicorn src.main:app --host 0.0.0.0 --port 8100
 ```
 
 The API will be available at:
-- API: http://localhost:8000
-- Interactive Docs: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- API: http://localhost:8100
+- Interactive Docs: http://localhost:8100/docs
+- ReDoc: http://localhost:8100/redoc
 
 ### Using the Services Directly
 
@@ -341,10 +343,7 @@ AFAS-Whisper-Feedback-main/
 
 ## 🧪 Testing
 
-```bash
-# Run tests (when implemented)
-pytest tests/
-```
+The tests are currently not working, they will be adjusted later
 
 ## 📝 Contributing
 
