@@ -200,7 +200,7 @@
         }
 
         function logout() {
-            localStorage.removeItem("access_token");
+            localStorage.clear();
             window.location.href = "/view/login.html";
         }
 

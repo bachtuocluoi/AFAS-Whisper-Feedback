@@ -12,13 +12,13 @@
 
 <body>
 
-	<div class="header">
-	 <a href="/view/homepage.html" class="logo">AFAS</a>
-	 <div class="header-right">
-	   <a href="/view/profile.html" class="log_in">Profile</a>
-	   <a href="#about">About</a>
-	 </div>
-	</div>
+    <div class="header">
+        <a href="/view/homepage.html" class="logo">AFAS</a>
+        <div class="header-right">
+            <a href="/view/profile.html" class="log_in">Profile</a>
+            <a href="#about">About</a>
+        </div>
+    </div>
     <h1>Answer the question below</h1>
 
     <form>
@@ -39,332 +39,147 @@
             <button id="play" type="submit">Play</button>
         </div>
     </form>
-	
-	<h2>Record the answer:</h2>
-	<button id="startBtn">Start recording</button>
+
+    <h2>Record the answer:</h2>
+    <button id="startBtn">Start recording</button>
     <button id="stopBtn" disabled>Stop recording</button>
     <button id="sendBtn" disabled>Upload recording</button>
 
     <audio id="player" controls></audio>
     <p id="status" style="display:none; color:blue; margin-top:10px; font-weight:bold;"></p>
-	<script src="auth.js"></script>
+    <script src="auth.js"></script>
     <script src="answer_question.js"></script>
-	<script>
-	const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
-    const sendBtn = document.getElementById("sendBtn");
-    const statusEl = document.getElementById("status");
-    const player = document.getElementById("player");
+    <script>
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const sendBtn = document.getElementById("sendBtn");
+        const statusEl = document.getElementById("status");
+        const player = document.getElementById("player");
 
-    let mediaRecorder = null;
-    let chunks = [];
-    let audioBlob = null;
+        let mediaRecorder = null;
+        let chunks = [];
+        let audioBlob = null;
 
-    startBtn.addEventListener("click", async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        startBtn.addEventListener("click", async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        const options = MediaRecorder.isTypeSupported("audio/mp3")
-          ? { mimeType: "audio/mp3" }
-          : {};
+                const options = MediaRecorder.isTypeSupported("audio/mp3")
+                    ? { mimeType: "audio/mp3" }
+                    : {};
 
-        mediaRecorder = new MediaRecorder(stream, options);
-        chunks = [];
-        audioBlob = null;
-        player.src = "";
+                mediaRecorder = new MediaRecorder(stream, options);
+                chunks = [];
+                audioBlob = null;
+                player.src = "";
 
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            chunks.push(event.data);
-          }
-        };
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        chunks.push(event.data);
+                    }
+                };
 
-        mediaRecorder.onstop = () => {
-          audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/mp3" });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          player.src = audioUrl;
-          sendBtn.disabled = false;
-          statusEl.innerText = `Recording stopped. Ready to upload.\nBlob size: ${audioBlob.size} bytes`;
-        };
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/mp3" });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    player.src = audioUrl;
+                    sendBtn.disabled = false;
+                    statusEl.innerText = `Recording stopped. Ready to upload.\nBlob size: ${audioBlob.size} bytes`;
+                };
 
-        mediaRecorder.start();
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        sendBtn.disabled = true;
-        statusEl.style.display = "block";
-        statusEl.innerText =  "Recording... speak now.";
-      } catch (err) {
-        console.error(err);
-        statusEl.innerText = "Could not start recording: " + err.message;
-      }
-    });
-
-    stopBtn.addEventListener("click", () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        statusEl.innerText = "Stopping recording...";
-      }
-    });
-
-    sendBtn.addEventListener("click", async () => {
-      if (!audioBlob) {
-        statusEl.style.display = "block";
-        statusEl.innerText = "No recording available.";
-        return;
-      }
-
-        statusEl.innerText = "Uploading...";
-
-        const formData = new FormData();
-
-        const fileName = audioBlob.type.includes("mp3") ? "speech.mp3" : "speech.wav";
-        formData.append("file", new File([audioBlob], fileName, { type: audioBlob.type }));
-
-
-        setTimeout(function () {
-        fetch(BACKEND_BASE_URL + "/api/v1/upload-audio", {
-          method: "POST",
-          body: formData,
-		  headers: {
-		    "Authorization": "Bearer " + token
-		  }
-        })
-        .then(function(response) {
-          if (!response.ok) {
-            return response.text().then(function(text) {
-              throw new Error(text);
-            });
-          }
-          return response.json();
-        })
-        .then(function(uploadResult) {
-          statusEl.innerText = "Processing...";
-
-          const submitPayload = {
-            user_id: 0,
-            audio_path: uploadResult.audio_path,
-            asr_type: "whisper"
-          };
-
-          return fetch(BACKEND_BASE_URL + "/api/v1/submit/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-			  "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify(submitPayload)
-          });
-        })
-        .then(function(response) {
-          if (!response.ok) {
-            return response.text().then(function(text) {
-              throw new Error(text);
-            });
-          }
-          return response.json();
-        })
-        .then(function(submitResult) {
-          localStorage.setItem("submit_id", submitResult.id);
-
-          statusEl.innerText = "Submit success";
-
-          setTimeout(function() {
-            window.location.href = "/view/transcript.html";
-          }, 2000);
-        })
-        .catch(function(error) {
-          statusEl.innerText = "Error: " + error.message;
-          sendBtn.disabled = false;
+                mediaRecorder.start();
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                sendBtn.disabled = true;
+                statusEl.style.display = "block";
+                statusEl.innerText = "Recording... speak now.";
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = "Could not start recording: " + err.message;
+            }
         });
-      }, 50);
-    });
-	</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width" />
 
-    <title>Answer the question</title>
-
-    <link rel="stylesheet" href="answer_question.css" />
-</head>
-
-<body>
-
-	<div class="header">
-	 <a href="/view/homepage.html" class="logo">AFAS</a>
-	 <div class="header-right">
-	   <a href="/view/profile.html" class="log_in">Profile</a>
-	   <a href="#about">About</a>
-	 </div>
-	</div>
-    <h1>Answer the question below</h1>
-
-    <form>
-        <label for="txt">Enter text</label>
-        <input id="txt" type="text" class="txt" />
-        <div>
-            <label for="rate">Rate</label><input type="range" min="0.5" max="2" value="1" step="0.1" id="rate" />
-            <div class="rate-value">1</div>
-            <div class="clearfix"></div>
-        </div>
-        <div>
-            <label for="pitch">Pitch</label><input type="range" min="0" max="2" value="1" step="0.1" id="pitch" />
-            <div class="pitch-value">1</div>
-            <div class="clearfix"></div>
-        </div>
-        <select></select>
-        <div class="controls">
-            <button id="play" type="submit">Play</button>
-        </div>
-    </form>
-	
-	<h2>Record the answer:</h2>
-	<button id="startBtn">Start recording</button>
-    <button id="stopBtn" disabled>Stop recording</button>
-    <button id="sendBtn" disabled>Upload recording</button>
-
-    <audio id="player" controls></audio>
-    <p id="status" style="display:none; color:blue; margin-top:10px; font-weight:bold;"></p>
-	<script src="auth.js"></script>
-    <script src="answer_question.js"></script>
-	<script>
-	const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
-    const sendBtn = document.getElementById("sendBtn");
-    const statusEl = document.getElementById("status");
-    const player = document.getElementById("player");
-
-    let mediaRecorder = null;
-    let chunks = [];
-    let audioBlob = null;
-
-    startBtn.addEventListener("click", async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-        const options = MediaRecorder.isTypeSupported("audio/mp3")
-          ? { mimeType: "audio/mp3" }
-          : {};
-
-        mediaRecorder = new MediaRecorder(stream, options);
-        chunks = [];
-        audioBlob = null;
-        player.src = "";
-
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            chunks.push(event.data);
-          }
-        };
-
-        mediaRecorder.onstop = () => {
-          audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/mp3" });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          player.src = audioUrl;
-          sendBtn.disabled = false;
-          statusEl.innerText = `Recording stopped. Ready to upload.\nBlob size: ${audioBlob.size} bytes`;
-        };
-
-        mediaRecorder.start();
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        sendBtn.disabled = true;
-        statusEl.style.display = "block";
-        statusEl.innerText =  "Recording... speak now.";
-      } catch (err) {
-        console.error(err);
-        statusEl.innerText = "Could not start recording: " + err.message;
-      }
-    });
-
-    stopBtn.addEventListener("click", () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        statusEl.innerText = "Stopping recording...";
-      }
-    });
-
-    sendBtn.addEventListener("click", async () => {
-      if (!audioBlob) {
-        statusEl.style.display = "block";
-        statusEl.innerText = "No recording available.";
-        return;
-      }
-
-        statusEl.innerText = "Uploading...";
-
-        const formData = new FormData();
-
-        const fileName = audioBlob.type.includes("mp3") ? "speech.mp3" : "speech.wav";
-        formData.append("file", new File([audioBlob], fileName, { type: audioBlob.type }));
-
-
-        setTimeout(function () {
-        fetch(BACKEND_BASE_URL + "/api/v1/upload-audio", {
-          method: "POST",
-          body: formData,
-		  headers: {
-		    "Authorization": "Bearer " + token
-		  }
-        })
-        .then(function(response) {
-          if (!response.ok) {
-            return response.text().then(function(text) {
-              throw new Error(text);
-            });
-          }
-          return response.json();
-        })
-        .then(function(uploadResult) {
-          statusEl.innerText = "Processing...";
-
-          const submitPayload = {
-            user_id: 0,
-            audio_path: uploadResult.audio_path,
-            asr_type: "whisper"
-          };
-
-          return fetch(BACKEND_BASE_URL + "/api/v1/submit/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-			  "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify(submitPayload)
-          });
-        })
-        .then(function(response) {
-          if (!response.ok) {
-            return response.text().then(function(text) {
-              throw new Error(text);
-            });
-          }
-          return response.json();
-        })
-        .then(function(submitResult) {
-          localStorage.setItem("submit_id", submitResult.id);
-
-          statusEl.innerText = "Submit success";
-
-          setTimeout(function() {
-            window.location.href = "/view/transcript.html";
-          }, 2000);
-        })
-        .catch(function(error) {
-          statusEl.innerText = "Error: " + error.message;
-          sendBtn.disabled = false;
+        stopBtn.addEventListener("click", () => {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                statusEl.innerText = "Stopping recording...";
+            }
         });
-      }, 50);
-    });
-	</script>
+
+        sendBtn.addEventListener("click", async () => {
+            if (!audioBlob) {
+                statusEl.style.display = "block";
+                statusEl.innerText = "No recording available.";
+                return;
+            }
+
+            statusEl.innerText = "Uploading...";
+
+            const formData = new FormData();
+
+            const fileName = audioBlob.type.includes("mp3") ? "speech.mp3" : "speech.wav";
+            formData.append("file", new File([audioBlob], fileName, { type: audioBlob.type }));
+
+
+            setTimeout(function () {
+                fetch(BACKEND_BASE_URL + "/api/v1/upload-audio", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            return response.text().then(function (text) {
+                                throw new Error(text);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(function (uploadResult) {
+                        statusEl.innerText = "Processing...";
+
+                        const submitPayload = {
+                            user_id: 0,
+                            audio_path: uploadResult.audio_path,
+                            asr_type: "whisper"
+                        };
+
+                        return fetch(BACKEND_BASE_URL + "/api/v1/submit/", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": "Bearer " + token
+                            },
+                            body: JSON.stringify(submitPayload)
+                        });
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            return response.text().then(function (text) {
+                                throw new Error(text);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(function (submitResult) {
+                        localStorage.setItem("submit_id", submitResult.id);
+
+                        statusEl.innerText = "Submit success";
+
+                        setTimeout(function () {
+                            window.location.href = "/view/transcript.html";
+                        }, 2000);
+                    })
+                    .catch(function (error) {
+                        statusEl.innerText = "Error: " + error.message;
+                        sendBtn.disabled = false;
+                    });
+            }, 50);
+        });
+    </script>
 </body>
 </html>

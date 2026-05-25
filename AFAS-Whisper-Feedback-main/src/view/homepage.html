@@ -76,6 +76,7 @@
         <h1>ASR</h1>
         <button id="low-btn" onclick="redirect()" visibility="hidden">Go to upload</button>
         <button id="low-btn2" onclick="goToAnswerQuestion()" visibility="hidden">Answer question</button>
+        <button id="low-btn3" onclick="goToAnswerQuestion2()" visibility="hidden">Answer question 2</button>
     </div>
 
     <script>
@@ -91,12 +92,14 @@
                 link.innerHTML = "Log in";
                 document.getElementById("low-btn").style.visibility = "hidden";
                 document.getElementById("low-btn2").style.visibility = "hidden";
+                document.getElementById("low-btn3").style.visibility = "hidden";
             }
             else {
                 link.href = "/view/profile.html";
                 link.innerHTML = `Profile`;
                 document.getElementById("low-btn").style.visibility = "visible";
                 document.getElementById("low-btn2").style.visibility = "visible";
+                document.getElementById("low-btn3").style.visibility = "visible";
             }
             return;
         }
@@ -109,6 +112,9 @@
         }
         function goToAnswerQuestion() {
             window.location.href = "/view/answer_question.html";
+        }
+        function goToAnswerQuestion2() {
+            window.location.href = "/view/answer_question2.html";
         }
         loadUser();
     </script>
