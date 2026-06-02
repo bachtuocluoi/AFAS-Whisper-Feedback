@@ -2,138 +2,231 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | AFAS</title>
+    <link rel="stylesheet" href="/view/common.css">
     <style>
-        * {
-            box-sizing: border-box;
+        .content-grid {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            align-items: start;
+            gap: 22px;
         }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            <!-- display: flex; -->
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        .profile-card {
+            border-top: 5px solid var(--primary);
         }
 
-        .box {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-            width: 380px;
+        .history-card {
+            border-top: 5px solid var(--accent-purple);
         }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
+        .history-icon {
+            background-color: var(--accent-purple);
         }
 
         .info {
+            margin-top: 18px;
+        }
+
+        .info-row {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(14, 142, 136, 0.12);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--primary-dark);
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            color: var(--text);
             font-size: 16px;
-            line-height: 1.8;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
         }
 
-        button {
+        .loading-text {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .logout-button {
             width: 100%;
-            margin-top: 20px;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            background: red;
-            color: white;
-            cursor: pointer;
+            margin-top: 22px;
+            background-color: var(--accent-coral);
         }
 
-            button:hover {
-                background: darkred;
-            }
-
-        .header {
-            overflow: hidden;
-            background-color: #f1f1f1;
-            padding: 20px 10px;
-            column-span: all;
+        .transcript-button {
+            padding: 9px 14px;
+            background-color: var(--primary-dark);
         }
 
-            .header a {
-                float: left;
-                color: black;
-                text-align: center;
-                padding: 12px;
-                text-decoration: none;
-                font-size: 18px;
-                line-height: 25px;
-                border-radius: 4px;
-            }
-
-                .header a.logo {
-                    font-size: 25px;
-                    font-weight: bold;
-                }
-
-                .header a:hover {
-                    background-color: #ddd;
-                    color: black;
-                }
-
-                .header a.log_in {
-                    background-color: dodgerblue;
-                    color: white;
-                }
-
-        .header-right {
-            float: right;
+        .table-wrapper {
+            margin-top: 18px;
+            overflow-x: auto;
+            border: 1px solid rgba(14, 142, 136, 0.12);
+            border-radius: 14px;
         }
 
-        @media screen and (max-width: 500px) {
-            .header a {
-                float: none;
-                display: block;
-                text-align: left;
-            }
+        table {
+            width: 100%;
+            min-width: 530px;
+            border-collapse: collapse;
+            background-color: rgba(255, 255, 255, 0.56);
+        }
 
-            .header-right {
-                float: none;
+        thead {
+            background-color: var(--primary-soft);
+        }
+
+        th,
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(14, 142, 136, 0.1);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            color: var(--secondary);
+            font-size: 13px;
+            letter-spacing: 0.35px;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #5e7076;
+            font-size: 14px;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background-color: var(--accent-purple-soft);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty-row td {
+            padding: 24px;
+            color: #87979c;
+            text-align: center;
+        }
+
+        @media screen and (max-width: 820px) {
+            .content-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <div class="header">
+    <header class="header">
         <a href="/view/homepage.html" class="logo">AFAS</a>
-        <div class="header-right">
-            <a href="#about">About</a>
-        </div>
+        <nav class="header-right">
+            <a href="/view/profile.html" class="active-link">Profile</a>
+            <a href="/view/homepage.html#about">About</a>
+        </nav>
+    </header>
+
+    <div class="page-wrapper">
+        <div class="decorative-shape shape-left"></div>
+        <div class="decorative-shape shape-right"></div>
+        <div class="decorative-shape shape-bottom"></div>
+
+        <main class="main-container">
+            <section class="page-heading">
+                <span class="badge">AI Speaking Feedback System</span>
+                <h1>Your <span class="highlight">Profile</span></h1>
+                <p class="page-description">
+                    Review your account information and open your previous
+                    speaking submissions.
+                </p>
+            </section>
+
+            <section class="content-grid">
+                <article class="content-card profile-card">
+                    <div class="card-icon">♡</div>
+                    <h2>User information</h2>
+                    <p class="card-description">Your current AFAS account details.</p>
+
+                    <div id="info" class="info">
+                        <p class="loading-text">Loading profile...</p>
+                    </div>
+
+                    <button class="logout-button" type="button" onclick="logout()">
+                        Log out
+                    </button>
+                </article>
+
+                <article class="content-card history-card">
+                    <div class="card-icon history-icon">↗</div>
+                    <h2>Submission history</h2>
+                    <p class="card-description">
+                        Open transcripts and previous speaking analysis results.
+                    </p>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Created date</th>
+                                    <th>Transcript</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allSub">
+                                <tr class="empty-row">
+                                    <td colspan="3">Loading submissions...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+        </main>
     </div>
 
-
-    <div class="box" style="padding-left:20px">
-        <h2>User info</h2>
-        <div id="info" class="info">Loading...</div>
-        <button onclick="logout()">Log out</button>
-    </div>
-    <br>
-    <div>
-        <h2>All submissions:</h2>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>id</th>
-                    <th>Created day</th>
-                    <th>Go to transcript</th>
-                </tr>
-            </thead>
-            <tbody id="allSub"></tbody>
-        </table>
-    </div>
-
-    <script src='/view/auth.js'></script>
+    <script src="/api/v1/view-config.js"></script>
+    <script src="/view/auth.js"></script>
     <script>
         loadUser();
+
+        function createInfoRow(label, value) {
+            const row = document.createElement("div");
+            row.className = "info-row";
+
+            const labelElement = document.createElement("span");
+            labelElement.className = "info-label";
+            labelElement.textContent = label;
+
+            const valueElement = document.createElement("span");
+            valueElement.className = "info-value";
+            valueElement.textContent = value || "-";
+
+            row.appendChild(labelElement);
+            row.appendChild(valueElement);
+
+            return row;
+        }
+
         async function loadUserProfile() {
+            const infoElement = document.getElementById("info");
 
             try {
                 const response = await fetch(BACKEND_BASE_URL + "/api/v1/users/me", {
@@ -152,51 +245,98 @@
                     return;
                 }
 
-                document.getElementById("info").innerHTML = `
-              <p><b>Username:</b> ${data.username}</p>
-              <p><b>Full name:</b> ${data.full_name ?? ""}</p>
-            `;
-
+                infoElement.innerHTML = "";
+                infoElement.appendChild(createInfoRow("Username", data.username));
+                infoElement.appendChild(createInfoRow("Full name", data.full_name));
             } catch (error) {
-                alert("Cannot connect to server.");
+                infoElement.innerHTML = `
+                    <p class="loading-text">Cannot connect to the server.</p>
+                `;
                 console.error(error);
             }
         }
 
-        function loadSubmission() {
-            const token = localStorage.getItem("access_token");
-            if (token) {
-                fetch(BACKEND_BASE_URL + "/api/v1/submit", {
+        async function loadSubmission() {
+            const allSub = document.getElementById("allSub");
+            const currentToken = localStorage.getItem("access_token");
+
+            if (!currentToken) {
+                window.location.href = "/view/login.html";
+                return;
+            }
+
+            try {
+                const response = await fetch(BACKEND_BASE_URL + "/api/v1/submit", {
                     method: "GET",
                     headers: {
-                        "Authorization": "Bearer " + token
+                        "Authorization": "Bearer " + currentToken
                     }
-                })
-                    .then(function (response) {
-                        if (!response.ok) {
-                            throw new Error("Failed to load submissions");
-                        }
-                        return response.json();
-                    })
-                    .then(function (response) {
-                        const allSub = document.getElementById("allSub");
-                        count = 1;
-                        response.forEach(function (submit) {
-                            allSub.innerHTML += `
-                    <tr>
-                       <td>${count}</td>
-                       <td>${submit.created_at}</td>
-                       <td><button onclick="goToTranscript(${submit.id})">Transcript</button></td>
-                    </tr>
-                  `
-                            count++;
-                        });
-                    })
-                    .catch(function (error) {
-                        alert("Error loading submissions");
-                        console.error(error);
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to load submissions");
+                }
+
+                const submissions = await response.json();
+                allSub.innerHTML = "";
+
+                if (!Array.isArray(submissions) || submissions.length === 0) {
+                    allSub.innerHTML = `
+                        <tr class="empty-row">
+                            <td colspan="3">No submissions yet.</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                submissions.forEach(function (submission, index) {
+                    const row = document.createElement("tr");
+
+                    const numberCell = document.createElement("td");
+                    numberCell.textContent = index + 1;
+
+                    const dateCell = document.createElement("td");
+                    dateCell.textContent = formatCreatedDate(submission.created_at);
+
+                    const actionCell = document.createElement("td");
+                    const transcriptButton = document.createElement("button");
+
+                    transcriptButton.type = "button";
+                    transcriptButton.className = "transcript-button";
+                    transcriptButton.textContent = "Open transcript";
+                    transcriptButton.addEventListener("click", function () {
+                        goToTranscript(submission.id);
                     });
+
+                    actionCell.appendChild(transcriptButton);
+                    row.appendChild(numberCell);
+                    row.appendChild(dateCell);
+                    row.appendChild(actionCell);
+
+                    allSub.appendChild(row);
+                });
+            } catch (error) {
+                allSub.innerHTML = `
+                    <tr class="empty-row">
+                        <td colspan="3">Error loading submissions.</td>
+                    </tr>
+                `;
+                console.error(error);
             }
+        }
+
+        function formatCreatedDate(dateString) {
+            if (!dateString) {
+                return "-";
+            }
+
+            const date = new Date(dateString);
+
+            if (Number.isNaN(date.getTime())) {
+                return dateString;
+            }
+
+            return date.toLocaleString();
         }
 
         function logout() {
@@ -204,9 +344,9 @@
             window.location.href = "/view/login.html";
         }
 
-        function goToTranscript(submit_id) {
-            localStorage.setItem("submit_id", submit_id);
-            window.location.href = "/view/transcript.html"
+        function goToTranscript(submitId) {
+            localStorage.setItem("submit_id", submitId);
+            window.location.href = "/view/transcript.html";
         }
 
         loadUserProfile();

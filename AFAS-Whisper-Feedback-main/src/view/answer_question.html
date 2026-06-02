@@ -7,7 +7,9 @@
 
     <title>Answer the question</title>
 
-    <link rel="stylesheet" href="answer_question.css" />
+    <link rel="stylesheet" href="common.css?v=2" />
+    <link rel="stylesheet" href="answer_question.css?v=7" />
+
 </head>
 
 <body>
@@ -36,14 +38,14 @@
         </div>
         <select></select>
         <div class="controls">
-            <button id="play" type="submit">Play</button>
+            <button id="play" class="play-button" type="submit">Play</button>
         </div>
     </form>
 
     <h2>Record the answer:</h2>
-    <button id="startBtn">Start recording</button>
-    <button id="stopBtn" disabled>Stop recording</button>
-    <button id="sendBtn" disabled>Upload recording</button>
+    <button id="startBtn" class="purple-button">Start recording</button>
+    <button id="stopBtn" class="secondary-button" disabled>Stop recording</button>
+    <button id="sendBtn" class="coral-button" disabled>Upload recording</button>
 
     <audio id="player" controls></audio>
     <p id="status" style="display:none; color:blue; margin-top:10px; font-weight:bold;"></p>

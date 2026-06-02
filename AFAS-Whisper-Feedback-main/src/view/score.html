@@ -1,95 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>AI Speaking Score</title>
 
-    <link rel="stylesheet" href="/view/score.css">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>AI Speaking Score | AFAS</title>
+
+    <!-- Shared AFAS theme -->
+    <link
+        rel="stylesheet"
+        href="/view/common.css?v=2"
+    >
+
+    <!-- Score dashboard styles -->
+    <link
+        rel="stylesheet"
+        href="/view/score.css?v=4"
+    >
 
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script src="/api/v1/view-config.js"></script>
     <script src="/view/auth.js"></script>
-    <script src="/view/score.js?v=7"></script>
+    <script src="/view/score.js?v=9"></script>
 </head>
 
 <body>
 
-    <div class="container">
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+    <header class="header">
+        <a
+            href="/view/homepage.html"
+            class="logo"
+        >
+            AFAS
+        </a>
 
-        <h1>AI Speaking Score Dashboard</h1>
+        <nav class="header-right">
+            <a href="/view/profile.html">
+                Profile
+            </a>
 
-        <div class="top-actions">
-            <button onclick="goBackResult()">Back to Result</button>
-            <button onclick="goBackUpload()">Upload Another Audio</button>
-            <button onclick="goToHomepage()">Return to Homepage</button>
-        </div>
+            <a href="/view/homepage.html#about">
+                About
+            </a>
+        </nav>
+    </header>
 
-        <!-- SCORE CARD -->
-        <section class="card">
+    <!-- =====================================================
+         PAGE CONTENT
+    ====================================================== -->
+    <div class="score-page">
 
-            <h2>Predicted Scores</h2>
+        <!-- Decorative shapes -->
+        <div class="decorative-shape shape-left score-shape-teal"></div>
+        <div class="decorative-shape shape-right score-shape-blue"></div>
+        <div class="decorative-shape shape-bottom score-shape-slate"></div>
 
-            <div class="score-grid">
+        <main class="score-container">
 
-                <div class="score-box">
-                    <div class="score-title">Overall</div>
-                    <div class="score-value" id="overallScore">
-                        -
-                    </div>
-                </div>
+            <!-- =================================================
+                 PAGE HEADING
+            ================================================== -->
+            <section class="score-heading">
+                <span class="badge">
+                    AI Speaking Feedback System
+                </span>
 
-                <div class="score-box">
-                    <div class="score-title">Fluency</div>
-                    <div class="score-value" id="fluencyScore">
-                        -
-                    </div>
-                </div>
+                <h1>
+                    Speaking Score
+                    <span class="score-highlight">
+                        Dashboard
+                    </span>
+                </h1>
 
-                <div class="score-box">
-                    <div class="score-title">Lexical</div>
-                    <div class="score-value" id="lexicalScore">
-                        -
-                    </div>
-                </div>
+                <p class="score-description">
+                    Review your predicted speaking scores and explore how
+                    individual features contribute to the analysis result.
+                </p>
+            </section>
 
-                <div class="score-box">
-                    <div class="score-title">Pronunciation</div>
-                    <div class="score-value" id="pronunciationScore">
-                        -
-                    </div>
-                </div>
+            <!-- =================================================
+                 NAVIGATION BUTTONS
+            ================================================== -->
+            <div class="top-actions">
+                <button
+                    class="back-button"
+                    type="button"
+                    onclick="goBackResult()"
+                >
+                    Back to result
+                </button>
 
+                <button
+                    class="upload-button"
+                    type="button"
+                    onclick="goBackUpload()"
+                >
+                    Upload another audio
+                </button>
+
+                <button
+                    class="home-button"
+                    type="button"
+                    onclick="goToHomepage()"
+                >
+                    Return to homepage
+                </button>
             </div>
 
-        </section>
+            <!-- =================================================
+                 PREDICTED SCORES
+            ================================================== -->
+            <section class="score-card">
+                <div class="score-card-header">
+                    <div>
+                        <h2 class="score-card-title">
+                            Predicted scores
+                        </h2>
 
+                        <p class="score-card-subtitle">
+                            Overview of your overall result and individual
+                            speaking performance categories.
+                        </p>
+                    </div>
 
+                    <div class="score-card-icon">
+                        ★
+                    </div>
+                </div>
 
-        <!-- SHAP TABLE -->
-        <section class="card">
+                <div class="score-grid">
 
-            <h2>Feature Contribution</h2>
+                    <article class="score-box overall-box">
+                        <div class="score-title">
+                            Overall
+                        </div>
 
-            <table class="shap-table">
+                        <div
+                            class="score-value"
+                            id="overallScore"
+                        >
+                            -
+                        </div>
+                    </article>
 
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th>Value</th>
-                        <th>SHAP</th>
-                        <th>Impact</th>
-                    </tr>
-                </thead>
+                    <article class="score-box fluency-box">
+                        <div class="score-title">
+                            Fluency
+                        </div>
 
-                <tbody id="shapTableBody">
-                </tbody>
+                        <div
+                            class="score-value"
+                            id="fluencyScore"
+                        >
+                            -
+                        </div>
+                    </article>
 
-            </table>
+                    <article class="score-box lexical-box">
+                        <div class="score-title">
+                            Lexical
+                        </div>
 
-        </section>
+                        <div
+                            class="score-value"
+                            id="lexicalScore"
+                        >
+                            -
+                        </div>
+                    </article>
 
+                    <article class="score-box pronunciation-box">
+                        <div class="score-title">
+                            Pronunciation
+                        </div>
+
+                        <div
+                            class="score-value"
+                            id="pronunciationScore"
+                        >
+                            -
+                        </div>
+                    </article>
+
+                </div>
+            </section>
+
+            <!-- =================================================
+                 FEATURE CONTRIBUTION TABLE
+            ================================================== -->
+            <section class="score-card">
+                <div class="score-card-header">
+                    <div>
+                        <h2 class="score-card-title">
+                            Feature contribution
+                        </h2>
+
+                        <p class="score-card-subtitle">
+                            Explore the values and SHAP impact of individual
+                            features used in the prediction.
+                        </p>
+                    </div>
+
+                    <div class="score-card-icon table-icon">
+                        ↗
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="shap-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Feature
+                                </th>
+
+                                <th>
+                                    Value
+                                </th>
+
+                                <th>
+                                    SHAP
+                                </th>
+
+                                <th>
+                                    Impact
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="shapTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
     </div>
-
 
 </body>
 </html>

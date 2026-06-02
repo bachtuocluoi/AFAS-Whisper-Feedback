@@ -1,69 +1,380 @@
+
+:root {
+    --score-primary: #14b8ad;
+    --score-primary-dark: #0e8e88;
+    --score-primary-soft: #dff7f5;
+
+    --score-blue: #4f8fb3;
+    --score-blue-soft: #e2f0f6;
+
+    --score-green: #a3bc58;
+    --score-green-soft: #eff5dc;
+
+    --score-slate: #3397b8;
+    --score-slate-soft: #5d747b;
+
+    --score-background: #f4f8f8;
+    --score-card: rgba(255, 255, 255, 0.94);
+
+    --score-text: #35505a;
+    --score-muted: #71858b;
+
+    --score-border: rgba(14, 142, 136, 0.14);
+    --score-shadow: rgba(37, 82, 88, 0.11);
+}
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
 body {
-    font-family: Arial;
-    background: #f5f6fa;
+    background-color: var(--score-background);
+}
+
+.score-page {
+    position: relative;
+    min-height: calc(100vh - 82px);
+    overflow: hidden;
+}
+
+.score-container {
+    position: relative;
+    z-index: 1;
+
+    width: min(1120px, calc(100% - 48px));
+
+    margin: 0 auto;
+    padding: 64px 0 58px;
+}
+
+/* =========================================================
+   HEADING
+   ========================================================= */
+
+.score-heading {
+    margin-bottom: 28px;
+}
+
+.score-heading h1 {
     margin: 0;
+
+    color: var(--score-slate);
+
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 1.08;
 }
 
-.container {
-    width: 90%;
-    margin: 20px auto;
+.score-highlight {
+    color: var(--score-primary-dark);
 }
 
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
+.score-description {
+    max-width: 760px;
+
+    margin: 16px 0 0;
+
+    color: var(--score-muted);
+
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   TOP BUTTONS
+   ========================================================= */
+
+.top-actions {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 11px;
+
+    margin-bottom: 24px;
+}
+
+.top-actions button {
+    padding: 11px 16px;
+
+    border: none;
+    border-radius: 11px;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    box-shadow: 0 6px 14px rgba(51, 78, 87, 0.14);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        filter 0.25s ease;
+}
+
+.top-actions button:hover {
+    transform: translateY(-3px);
+
+    box-shadow: 0 10px 18px rgba(51, 78, 87, 0.2);
+
+    filter: brightness(1.05);
+}
+
+.back-button {
+    background-color: var(--score-slate);
+}
+
+.upload-button {
+    background-color: var(--score-primary-dark);
+}
+
+.home-button {
+    background-color: var(--score-blue);
+}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.score-card {
+    margin-bottom: 22px;
+    padding: 26px;
+
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    border-radius: 24px;
+
+    background-color: var(--score-card);
+
+    box-shadow:
+        0 15px 35px var(--score-shadow),
+        0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.score-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 18px;
+
     margin-bottom: 20px;
 }
 
+.score-card-title {
+    margin: 0;
+
+    color: var(--score-slate);
+
+    font-size: 23px;
+}
+
+.score-card-subtitle {
+    margin: 7px 0 0;
+
+    color: var(--score-muted);
+
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.score-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 46px;
+    height: 46px;
+
+    border-radius: 15px;
+
+    background-color: var(--score-primary-dark);
+    color: white;
+
+    font-size: 21px;
+    font-weight: bold;
+
+    box-shadow: 0 7px 16px rgba(51, 78, 87, 0.14);
+}
+
+.table-icon {
+    background-color: var(--score-blue);
+}
+
+/* =========================================================
+   SCORE BOXES
+   ========================================================= */
+
 .score-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 16px;
 }
 
 .score-box {
-    background: linear-gradient( 135deg, #4f46e5, #7c3aed );
-    color: white;
-    padding: 25px;
-    border-radius: 16px;
+    padding: 24px 18px;
+
+    border: 1px solid var(--score-border);
+    border-radius: 18px;
+
     text-align: center;
+
+    box-shadow: 0 7px 16px rgba(51, 78, 87, 0.08);
+}
+
+/* Main score */
+.overall-box {
+    background-color: var(--score-primary-dark);
+    color: white;
+}
+
+/* Light blue */
+.fluency-box {
+    background-color: var(--score-blue-soft);
+    color: var(--score-slate);
+}
+
+/* Soft green */
+.lexical-box {
+    background-color: var(--score-green-soft);
+    color: var(--score-slate);
+}
+
+/* Dark slate */
+.pronunciation-box {
+    background-color: var(--score-slate);
+    color: white;
 }
 
 .score-title {
-    font-size: 18px;
     margin-bottom: 10px;
+
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 0.2px;
 }
 
 .score-value {
-    font-size: 40px;
-    font-weight: bold;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.table-wrapper {
+    overflow-x: auto;
+
+    border: 1px solid var(--score-border);
+    border-radius: 14px;
 }
 
 .shap-table {
     width: 100%;
+    min-width: 650px;
+
     border-collapse: collapse;
+
+    background-color: rgba(255, 255, 255, 0.58);
 }
 
-    .shap-table th,
-    .shap-table td {
-        border: 1px solid #ddd;
-        padding: 12px;
+.shap-table th,
+.shap-table td {
+    padding: 14px 16px;
+
+    border-bottom: 1px solid rgba(14, 142, 136, 0.1);
+
+    text-align: left;
+    vertical-align: middle;
+}
+
+.shap-table th {
+    background-color: var(--score-blue-soft);
+    color: var(--score-slate);
+
+    font-size: 13px;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+}
+
+.shap-table td {
+    color: #5e7076;
+
+    font-size: 14px;
+}
+
+.shap-table tbody tr:hover {
+    background-color: var(--score-primary-soft);
+}
+
+.shap-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* =========================================================
+   DECORATIVE SHAPES
+   ========================================================= */
+
+.score-shape-blue {
+    background-color: var(--score-blue-soft);
+}
+
+.score-shape-teal {
+    background-color: var(--score-primary-soft);
+}
+
+.score-shape-slate {
+    background-color: rgba(51, 78, 87, 0.08);
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media screen and (max-width: 900px) {
+    .score-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media screen and (max-width: 700px) {
+    .score-container {
+        width: calc(100% - 32px);
+
+        padding: 46px 0 38px;
     }
 
-    .shap-table th {
-        background: #eef2ff;
+    .score-card {
+        padding: 22px;
     }
 
-button {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    background: #4f46e5;
-    color: white;
-    cursor: pointer;
+    .top-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .top-actions button {
+        width: 100%;
+    }
 }
 
-.top-actions {
-    margin-bottom: 20px;
+@media screen and (max-width: 460px) {
+    .score-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .score-box {
+        padding: 21px 16px;
+    }
+
+    .score-value {
+        font-size: 38px;
+    }
 }
+
+
