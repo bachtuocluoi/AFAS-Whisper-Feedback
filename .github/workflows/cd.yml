@@ -25,7 +25,7 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./AFAS-Whisper-Feedback-main
           push: true
           platforms: linux/amd64
           tags: |
