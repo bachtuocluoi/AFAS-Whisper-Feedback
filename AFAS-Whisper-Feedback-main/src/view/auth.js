@@ -5,7 +5,7 @@ const token = localStorage.getItem("access_token");
 
 function loadUser() {
     if (!token) {
-        alert("User not login.");
+        alert("User not login. Please login first");
         window.location.href = "/view/login.html";
         return;
     }
