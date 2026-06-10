@@ -1,0 +1,11 @@
+.git
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+*.db
+catboost_info/
+outputs/
+.gitignore

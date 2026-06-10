@@ -1,0 +1,59 @@
+name: Build and Deploy to k3s
+
+on:
+  push:
+    branches: [devops, main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/bachtuocluoi/afas-whisper-feedback
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./AFAS-Whisper-Feedback-main
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: phats02/my-vps
+          token: ${{ secrets.GITOPS_PAT }}
+          path: my-vps
+
+      - name: Update image tag
+        run: |
+          sed -i "s|${{ env.IMAGE }}:[^ ]*|${{ env.IMAGE }}:${{ github.sha }}|" \
+            my-vps/infra/speaktop/deployment.yaml
+
+      - name: Commit and push
+        run: |
+          cd my-vps
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add infra/speaktop/deployment.yaml
+          git commit -m "chore: deploy speaktop ${{ github.sha }}"
+          git push

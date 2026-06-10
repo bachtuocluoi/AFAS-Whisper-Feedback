@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - db-data:/app/db
+    environment:
+      - DATABASE_URL=sqlite:////app/db/asr.db
+    restart: unless-stopped
+
+volumes:
+  db-data:
