@@ -11,6 +11,8 @@ from src.core.database import engine, Base
 from src.core import models
 from src.api.routes import api_router
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -60,17 +62,33 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 # Mount static HTML files
-app.mount("/view", StaticFiles(directory="src/view"), name="view")
+#app.mount("/view", StaticFiles(directory="src/view"), name="view")
+
+# Đường dẫn tuyệt đối đến thư mục src/view
+VIEW_DIR = Path(__file__).resolve().parent / "view"
 
 
+# Mount static HTML, CSS and JavaScript files
+app.mount(
+    "/view",
+    StaticFiles(directory=VIEW_DIR),
+    name="view"
+)
 
-@app.get("/")
+
+@app.get("/", response_class=FileResponse)
 def root():
     """
-    Root endpoint providing API information.
-    
-    Returns:
-        Welcome message and API information
+    Display the AFAS homepage.
+    """
+    return FileResponse(VIEW_DIR / "homepage.html")
+
+
+
+@app.get("/api-info")
+def api_info():
+    """
+    Return basic information about the AFAS API.
     """
     return {
         "message": "Welcome to AFAS (Automatic Feedback for Speaking) API",
