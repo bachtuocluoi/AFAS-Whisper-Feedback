@@ -62,7 +62,11 @@ function renderFluency() {
 function renderLexical() {
     const d = dashboardData;
 
-    
+    document.getElementById("A1").innerText = format2(d.lexical.A1);
+    document.getElementById("A2").innerText = format2(d.lexical.A2);
+    document.getElementById("B1").innerText = format2(d.lexical.B1);
+    document.getElementById("B2").innerText = format2(d.lexical.B2);
+    document.getElementById("C1").innerText = format2(d.lexical.C1);
 
     const fig = d.charts.lexical_bar;
 

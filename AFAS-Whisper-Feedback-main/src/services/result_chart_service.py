@@ -22,6 +22,11 @@ def build_lexical_bar_chart(lexical):
     )
     fig.update_layout(
         title="Lexical CEFR Distribution",
+        font=dict(
+            family="Arial, sans-serif",
+            size=14,
+            color="#28475c"
+        ),
         template="plotly_white",
         margin=dict(l=40, r=20, t=50, b=40)
     )
@@ -40,7 +45,12 @@ def build_lexical_diversity_chart(lexical):
         textposition="auto"
     )
     fig.update_layout(
-        title="Lexical Diversity",
+        title="Lexical Diversity Distribution",
+        font=dict(
+            family="Arial, sans-serif",
+            size=14,
+            color="#28475c"
+        ),
         template="plotly_white",
         margin=dict(l=40, r=20, t=50, b=40)
     )
@@ -68,6 +78,11 @@ def build_pronunciation_bar_chart(pron):
     )
     fig.update_layout(
         title="Pronunciation Distribution",
+        font=dict(
+            family="Arial, sans-serif",
+            size=14,
+            color="#28475c"
+        ),
         template="plotly_white",
         margin=dict(l=40, r=20, t=50, b=40)
     )

@@ -316,6 +316,59 @@ body {
     background-color: rgba(255, 255, 255, 0.52);
 }
 
+.grid-teal-5 {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+
+    gap: 11px;
+
+    margin-bottom: 16px;
+}
+
+.grid-teal-5 .mini-card {
+    padding: 13px 10px;
+
+    border: 1px solid rgba(43, 150, 150, 0.16);
+    border-radius: 12px;
+
+    background-color: #e7f8f5;
+
+    text-align: center;
+
+    box-shadow: 0 3px 10px rgba(39, 105, 105, 0.08);
+}
+
+/* Xanh ngọc tăng dần từ nhạt đến đậm */
+.grid-teal-5 .mini-card:nth-child(2) {
+    background-color: #d9f5f1;
+}
+
+.grid-teal-5 .mini-card:nth-child(3) {
+    background-color: #c9f1ec;
+}
+
+.grid-teal-5 .mini-card:nth-child(4) {
+    background-color: #b7ebe5;
+}
+
+.grid-teal-5 .mini-card:nth-child(5) {
+    background-color: #a5e5dd;
+}
+
+.grid-teal-5 .mini-card div {
+    margin-bottom: 6px;
+
+    color: var(--result-slate-soft);
+
+    font-size: 14px;
+}
+
+.grid-teal-5 .mini-card strong {
+    color: var(--result-slate);
+
+    font-size: 24px;
+}
+
 /* =========================================================
    PRONUNCIATION MINI CARDS
    ========================================================= */
