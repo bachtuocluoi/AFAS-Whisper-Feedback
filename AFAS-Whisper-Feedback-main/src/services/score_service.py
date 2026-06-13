@@ -1,34 +1,55 @@
-
 """
 Score prediction service.
 
 This service predicts speaking scores from extracted features and generates
-local SHAP explanations for each prediction.
+local SHAP explanations for the OVERALL model only.
 
-Pipeline:
-audio -> transcript -> features -> feedback -> score + SHAP
+Important rule:
+- Prediction:
+    Each model uses feature_columns_by_model.json.
+- SHAP:
+    Only the overall model is explained, using feature_columns.json.
 """
 
 import json
+import math
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, List
 
 import pandas as pd
 from catboost import CatBoostRegressor, Pool
 
 
-# File hiện tại: src/services/score_service.py
-# parents[2] trỏ về root project
+# ============================================
+# ROUNDING
+# ============================================
+
+def round_half(score: float) -> float:
+    """
+    Round score to IELTS-like 0.5 band using half-up rule.
+    """
+    score = float(score)
+    score = max(0.0, min(9.0, score))
+
+    return math.floor(score * 2 + 0.5 + 1e-12) / 2
+
+
+# ============================================
+# PATHS
+# ============================================
+
+# Current file: src/services/score_service.py
+# parents[2] points to the project root.
 BASE_DIR = Path(__file__).resolve().parents[2]
-
-
-# ============================================
-# MODEL DIRECTORY
-# ============================================
 
 MODEL_DIR = BASE_DIR / "ml_models"
 
+# feature_columns.json is a LIST of all features used by the overall model.
 FEATURE_COLUMNS_PATH = MODEL_DIR / "feature_columns.json"
+
+# feature_columns_by_model.json is a DICT.
+FEATURE_COLUMNS_BY_MODEL_PATH = MODEL_DIR / "feature_columns_by_model.json"
+
 FEATURE_MEDIANS_PATH = MODEL_DIR / "feature_medians.json"
 
 MODEL_PATHS = {
@@ -39,49 +60,105 @@ MODEL_PATHS = {
 }
 
 
-# Cache loaded models to avoid loading model files repeatedly
-_MODEL_CACHE = {}
+# ============================================
+# CACHE
+# ============================================
+
+_MODEL_CACHE: Dict[str, CatBoostRegressor] = {}
+_JSON_CACHE: Dict[str, Any] = {}
 
 
 # ============================================
 # LOAD HELPERS
 # ============================================
 
-def _load_json(path: Path):
+def _load_json(path: Path) -> Any:
     """
-    Load a JSON file.
-
-    Args:
-        path: Path to JSON file
-
-    Returns:
-        Parsed JSON object
-
-    Raises:
-        FileNotFoundError: If file does not exist
+    Load and cache JSON file.
     """
+    cache_key = str(path)
+
+    if cache_key in _JSON_CACHE:
+        return _JSON_CACHE[cache_key]
 
     if not path.exists():
         raise FileNotFoundError(f"Required file not found: {path}")
 
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    with open(path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    _JSON_CACHE[cache_key] = data
+
+    return data
+
+
+def load_overall_feature_columns() -> List[str]:
+    """
+    Load feature_columns.json.
+
+    This file must be a list because it is used as:
+        X[overall_feature_columns]
+
+    It is used for:
+    - building the full 14-feature input
+    - overall SHAP explanation
+    """
+    feature_columns = _load_json(FEATURE_COLUMNS_PATH)
+
+    if not isinstance(feature_columns, list):
+        raise TypeError(
+            "feature_columns.json must be a list of feature names."
+        )
+
+    return feature_columns
+
+
+def load_features_by_model() -> Dict[str, List[str]]:
+    """
+    Load feature_columns_by_model.json.
+
+    This file must be a dictionary:
+    {
+        "fluency": [...],
+        "lexical": [...],
+        "pronunciation": [...],
+        "overall": [...]
+    }
+    """
+    features_by_model = _load_json(FEATURE_COLUMNS_BY_MODEL_PATH)
+
+    if not isinstance(features_by_model, dict):
+        raise TypeError(
+            "feature_columns_by_model.json must be a dictionary, "
+            "not a list."
+        )
+
+    required_targets = [
+        "overall",
+        "fluency",
+        "lexical",
+        "pronunciation",
+    ]
+
+    for target_name in required_targets:
+        if target_name not in features_by_model:
+            raise KeyError(
+                f"Missing key '{target_name}' in "
+                "feature_columns_by_model.json"
+            )
+
+        if not isinstance(features_by_model[target_name], list):
+            raise TypeError(
+                f"features_by_model['{target_name}'] must be a list."
+            )
+
+    return features_by_model
 
 
 def _load_model(model_path: Path) -> CatBoostRegressor:
     """
     Load a CatBoost model from disk.
-
-    Args:
-        model_path: Path to .cbm model file
-
-    Returns:
-        Loaded CatBoostRegressor model
-
-    Raises:
-        FileNotFoundError: If model file does not exist
     """
-
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
@@ -94,14 +171,7 @@ def _load_model(model_path: Path) -> CatBoostRegressor:
 def load_score_model(target_name: str) -> CatBoostRegressor:
     """
     Load and cache a CatBoost model by target name.
-
-    Args:
-        target_name: One of overall, fluency, lexical, pronunciation
-
-    Returns:
-        Loaded CatBoostRegressor model
     """
-
     if target_name in _MODEL_CACHE:
         return _MODEL_CACHE[target_name]
 
@@ -122,25 +192,17 @@ def build_score_features(
     fluency_data: Dict[str, Any],
     lexical_cefr: Dict[str, Any],
     lexical_diversity: Dict[str, Any],
-    pronunciation_data: Dict[str, Any]
+    pronunciation_data: Dict[str, Any],
 ) -> pd.DataFrame:
     """
-    Build model input DataFrame from extracted feature dictionaries.
+    Build one-row DataFrame containing all 14 overall features.
 
-    This function maps runtime feature names to the exact feature names
-    used during model training.
-
-    Args:
-        fluency_data: Output from compute_fluency_metrics()
-        lexical_cefr: Output from compute_lexical_cefr_metrics()
-        lexical_diversity: Output from compute_lexical_diversity_metrics()
-        pronunciation_data: Output from compute_pronunciation_metrics()
-
-    Returns:
-        One-row pandas DataFrame with feature columns in training order
+    Later:
+    - each score model selects its own columns from feature_columns_by_model.json
+    - SHAP selects overall columns from feature_columns.json
     """
 
-    feature_columns = _load_json(FEATURE_COLUMNS_PATH)
+    overall_feature_columns = load_overall_feature_columns()
     feature_medians = _load_json(FEATURE_MEDIANS_PATH)
 
     feature_dict = {
@@ -169,16 +231,72 @@ def build_score_features(
 
     X = pd.DataFrame([feature_dict])
 
-    for col in feature_columns:
+    for col in overall_feature_columns:
         if col not in X.columns:
             X[col] = feature_medians.get(col, 0.0)
 
         X[col] = pd.to_numeric(X[col], errors="coerce")
         X[col] = X[col].fillna(feature_medians.get(col, 0.0))
 
-    X = X[feature_columns]
+    # IMPORTANT:
+    # overall_feature_columns comes from feature_columns.json, so it is a list.
+    X = X[overall_feature_columns]
 
     return X
+
+
+def select_features_for_prediction(
+    X_all: pd.DataFrame,
+    target_name: str,
+) -> pd.DataFrame:
+    """
+    Select correct feature columns for model prediction.
+
+    This uses feature_columns_by_model.json.
+    """
+    features_by_model = load_features_by_model()
+
+    if target_name not in features_by_model:
+        raise ValueError(f"Unknown target name: {target_name}")
+
+    target_features = features_by_model[target_name]
+
+    missing_cols = [
+        col for col in target_features
+        if col not in X_all.columns
+    ]
+
+    if missing_cols:
+        raise ValueError(
+            f"Missing feature columns for {target_name}: "
+            + ", ".join(missing_cols)
+        )
+
+    return X_all[target_features]
+
+
+def select_features_for_overall_shap(
+    X_all: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Select feature columns for overall SHAP.
+
+    This uses feature_columns.json, not feature_columns_by_model.json.
+    """
+    overall_feature_columns = load_overall_feature_columns()
+
+    missing_cols = [
+        col for col in overall_feature_columns
+        if col not in X_all.columns
+    ]
+
+    if missing_cols:
+        raise ValueError(
+            "Missing overall SHAP feature columns: "
+            + ", ".join(missing_cols)
+        )
+
+    return X_all[overall_feature_columns]
 
 
 # ============================================
@@ -188,29 +306,17 @@ def build_score_features(
 def clip_score(score: float) -> float:
     """
     Clip predicted score to IELTS-like range 0-9.
-
-    Args:
-        score: Raw predicted score
-
-    Returns:
-        Score within [0, 9]
     """
-
     return max(0.0, min(9.0, float(score)))
 
 
-def _predict_score(model: CatBoostRegressor, X: pd.DataFrame) -> float:
+def _predict_score(
+    model: CatBoostRegressor,
+    X: pd.DataFrame,
+) -> float:
     """
-    Predict score using a loaded CatBoost model.
-
-    Args:
-        model: Loaded CatBoost model
-        X: Feature DataFrame
-
-    Returns:
-        Clipped predicted score
+    Predict raw score using loaded CatBoost model.
     """
-
     pred = model.predict(X)[0]
     return clip_score(pred)
 
@@ -219,55 +325,53 @@ def _predict_score(model: CatBoostRegressor, X: pd.DataFrame) -> float:
 # SHAP
 # ============================================
 
-def _make_local_shap_dict(
+def _make_overall_local_shap_dict(
     model: CatBoostRegressor,
-    X: pd.DataFrame,
-    prediction: float
+    X_overall: pd.DataFrame,
+    prediction_raw: float,
+    prediction_rounded: float,
 ) -> dict:
     """
-    Create local SHAP explanation for one predicted sample.
+    Create local SHAP explanation for the overall model only.
 
-    Args:
-        model: CatBoost model used for prediction
-        X: One-row feature DataFrame
-        prediction: Predicted score
-
-    Returns:
-        Dictionary containing base value, prediction, and feature contributions
+    X_overall must use feature_columns.json.
     """
 
     shap_values = model.get_feature_importance(
-        data=Pool(X),
-        type="ShapValues"
+        data=Pool(X_overall),
+        type="ShapValues",
     )
 
     # CatBoost returns shape: [n_samples, n_features + 1]
-    # Last value is the expected value / base value
+    # Last value is expected value / base value.
     row_shap = shap_values[0][:-1]
     base_value = shap_values[0][-1]
 
     result = {
         "base_value": round(float(base_value), 4),
-        "prediction": round(float(prediction), 2),
-        "features": []
+        "prediction_raw": round(float(prediction_raw), 4),
+        "prediction": round(float(prediction_rounded), 1),
+        "features": [],
     }
 
     for feature_name, feature_value, shap_value in zip(
-        X.columns,
-        X.iloc[0].values,
-        row_shap
+        X_overall.columns,
+        X_overall.iloc[0].values,
+        row_shap,
     ):
-        result["features"].append({
-            "feature": feature_name,
-            "feature_value": round(float(feature_value), 4),
-            "shap_value": round(float(shap_value), 4),
-            "impact": "increase" if shap_value >= 0 else "decrease"
-        })
+        result["features"].append(
+            {
+                "feature": feature_name,
+                "feature_value": round(float(feature_value), 4),
+                "shap_value": round(float(shap_value), 4),
+                "impact": "increase" if shap_value >= 0 else "decrease",
+            }
+        )
 
     result["features"] = sorted(
         result["features"],
         key=lambda item: abs(item["shap_value"]),
-        reverse=True
+        reverse=True,
     )
 
     return result
@@ -281,46 +385,83 @@ def predict_scores_with_shap_from_features(
     fluency_data: Dict[str, Any],
     lexical_cefr: Dict[str, Any],
     lexical_diversity: Dict[str, Any],
-    pronunciation_data: Dict[str, Any]
+    pronunciation_data: Dict[str, Any],
 ) -> dict:
     """
-    Predict scores and compute local SHAP explanations from extracted features.
+    Predict scores and compute overall SHAP explanation.
 
-    Args:
-        fluency_data: Fluency features
-        lexical_cefr: CEFR lexical distribution
-        lexical_diversity: Lexical diversity features
-        pronunciation_data: Pronunciation confidence features
-
-    Returns:
-        Dictionary containing:
-        - scores: predicted score values
-        - shap: local SHAP explanation for each score target
+    Rules:
+    1. Build all 14 features once.
+    2. Predict each model using feature_columns_by_model.json.
+    3. Explain only the overall model using feature_columns.json.
     """
 
-    X = build_score_features(
+    X_all = build_score_features(
         fluency_data=fluency_data,
         lexical_cefr=lexical_cefr,
         lexical_diversity=lexical_diversity,
-        pronunciation_data=pronunciation_data
+        pronunciation_data=pronunciation_data,
     )
 
     output = {
         "scores": {},
-        "shap": {}
+        "raw_scores": {},
+        "shap": {},
     }
 
-    for target_name in ["overall", "fluency", "lexical", "pronunciation"]:
+    overall_prediction_raw = None
+    overall_prediction_rounded = None
+
+    for target_name in [
+        "overall",
+        "fluency",
+        "lexical",
+        "pronunciation",
+    ]:
         model = load_score_model(target_name)
 
-        prediction = _predict_score(model, X)
-
-        output["scores"][f"{target_name}_score"] = round(float(prediction), 2)
-
-        output["shap"][target_name] = _make_local_shap_dict(
-            model=model,
-            X=X,
-            prediction=prediction
+        # Prediction uses feature_columns_by_model.json.
+        X_target = select_features_for_prediction(
+            X_all=X_all,
+            target_name=target_name,
         )
+
+        prediction_raw = _predict_score(
+            model=model,
+            X=X_target,
+        )
+
+        prediction_rounded = round_half(prediction_raw)
+
+        #print("====", target_name, "====")
+        #print("features:", list(X_target.columns))
+        #print("shape:", X_target.shape)
+        #print("raw:", prediction_raw)
+        #print("rounded:", prediction_rounded)
+
+        output["scores"][f"{target_name}_score"] = round(
+            float(prediction_rounded),
+            1,
+        )
+
+        output["raw_scores"][f"{target_name}_score"] = round(
+            float(prediction_raw),
+            4,
+        )
+
+        if target_name == "overall":
+            overall_prediction_raw = prediction_raw
+            overall_prediction_rounded = prediction_rounded
+
+    # SHAP only for the overall model.
+    overall_model = load_score_model("overall")
+    X_overall_shap = select_features_for_overall_shap(X_all)
+
+    output["shap"]["overall"] = _make_overall_local_shap_dict(
+        model=overall_model,
+        X_overall=X_overall_shap,
+        prediction_raw=overall_prediction_raw,
+        prediction_rounded=overall_prediction_rounded,
+    )
 
     return output

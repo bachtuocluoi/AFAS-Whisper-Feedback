@@ -17,19 +17,17 @@ This file will:
 7. Save final CatBoost models into src/ml_models/
 """
 
+
 import json
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shap
-import matplotlib.pyplot as plt
-
 from catboost import CatBoostRegressor
-from sklearn.model_selection import KFold
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-
+from sklearn.model_selection import KFold
 
 
 # ============================================
@@ -38,40 +36,83 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
+
 # ============================================
 # DATA DIRECTORY
 # ============================================
 
 DATA_DIR = BASE_DIR / "data"
 
+
 # ============================================
 # DATA FILES
 # ============================================
 
 SCORES_FILE = DATA_DIR / "averaged_scores_by_filename.xlsx"
-
 FLUENCY_FILE = DATA_DIR / "fluency.csv"
-
 PRON_FILE = DATA_DIR / "pronunciation.csv"
-
 LEX_SOPH_FILE = DATA_DIR / "lexical_sophistication.csv"
-
 LEX_DIV_FILE = DATA_DIR / "lexical_diversity.csv"
 
+
 # ============================================
-# MODEL DIRECTORY
+# OUTPUT DIRECTORIES
 # ============================================
 
 MODEL_DIR = BASE_DIR / "ml_models"
-
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-# Thư mục lưu kết quả output
 OUTPUT_DIR = BASE_DIR / "outputs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+
+# ============================================
+# TRAINING CONFIGURATION
+# ============================================
+
 N_SPLITS = 5
 RANDOM_STATE = 42
+
+# Giữ đúng cấu hình từ ba model riêng mà bạn đã thử nghiệm.
+# Overall model sử dụng cấu hình hiện tại của file tổng.
+MODEL_PARAMS_BY_TARGET = {
+    "fluency": {
+        "iterations": 300,
+        "learning_rate": 0.05,
+        "depth": 4,
+        "loss_function": "RMSE",
+        "eval_metric": "RMSE",
+        "random_seed": RANDOM_STATE,
+        "verbose": False,
+    },
+    "lexical": {
+        "iterations": 300,
+        "learning_rate": 0.05,
+        "depth": 4,
+        "loss_function": "RMSE",
+        "eval_metric": "RMSE",
+        "random_seed": RANDOM_STATE,
+        "verbose": False,
+    },
+    "pronunciation": {
+        "iterations": 300,
+        "learning_rate": 0.05,
+        "depth": 4,
+        "loss_function": "RMSE",
+        "eval_metric": "RMSE",
+        "random_seed": RANDOM_STATE,
+        "verbose": 100,
+    },
+    "overall": {
+        "iterations": 300,
+        "learning_rate": 0.05,
+        "depth": 4,
+        "loss_function": "RMSE",
+        "eval_metric": "RMSE",
+        "random_seed": RANDOM_STATE,
+        "verbose": False,
+    },
+}
 
 
 # ============================================
@@ -105,31 +146,32 @@ def qwk_half_band(y_true, y_pred):
     y_pred = (y_pred * 2).astype(int)
 
     n = 19  # 0..18
-    O = np.zeros((n, n), dtype=float)
+    observed = np.zeros((n, n), dtype=float)
 
-    for a, b in zip(y_true, y_pred):
-        O[a, b] += 1
+    for actual_value, predicted_value in zip(y_true, y_pred):
+        observed[actual_value, predicted_value] += 1
 
     hist_true = np.bincount(y_true, minlength=n)
     hist_pred = np.bincount(y_pred, minlength=n)
-    E = np.outer(hist_true, hist_pred) / len(y_true)
+    expected = np.outer(hist_true, hist_pred) / len(y_true)
 
-    W = np.zeros((n, n), dtype=float)
+    weights = np.zeros((n, n), dtype=float)
+
     for i in range(n):
         for j in range(n):
-            W[i, j] = ((i - j) ** 2) / ((n - 1) ** 2)
+            weights[i, j] = ((i - j) ** 2) / ((n - 1) ** 2)
 
-    denom = np.sum(W * E)
+    denominator = np.sum(weights * expected)
 
-    if denom == 0:
+    if denominator == 0:
         return np.nan
 
-    return 1 - np.sum(W * O) / denom
+    return 1 - np.sum(weights * observed) / denominator
 
 
 def check_file_exists(file_path):
     """
-    Check whether input file exists.
+    Check whether an input file exists.
     """
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
@@ -138,9 +180,12 @@ def check_file_exists(file_path):
 def extract_file_name_number(df, source_col="file"):
     """
     Extract numeric file_name from file column.
+
     Example:
         1_prob.csv -> 1
     """
+    df = df.copy()
+
     df["file_name"] = (
         df[source_col]
         .astype(str)
@@ -149,10 +194,17 @@ def extract_file_name_number(df, source_col="file"):
 
     df["file_name"] = pd.to_numeric(
         df["file_name"],
-        errors="coerce"
+        errors="coerce",
     ).astype("Int64")
 
     return df
+
+
+def create_model(target_name):
+    """
+    Create one CatBoost model using the configuration of its target.
+    """
+    return CatBoostRegressor(**MODEL_PARAMS_BY_TARGET[target_name])
 
 
 # ============================================
@@ -185,7 +237,7 @@ score_df = pd.read_excel(SCORES_FILE)
 score_df["class_name"] = score_df["class_name"].astype(str)
 score_df["file_name"] = pd.to_numeric(
     score_df["file_name"],
-    errors="coerce"
+    errors="coerce",
 ).astype("Int64")
 
 
@@ -199,7 +251,7 @@ fluency_df = extract_file_name_number(fluency_df, source_col="file")
 
 
 # ============================================
-# 5. LOAD LEXICAL DIVERSITY
+# 5. LOAD LEXICAL DIVERSITY FEATURES
 # ============================================
 
 lex_div_df = pd.read_csv(LEX_DIV_FILE)
@@ -208,7 +260,7 @@ lex_div_df = extract_file_name_number(lex_div_df, source_col="file")
 
 
 # ============================================
-# 6. LOAD LEXICAL SOPHISTICATION
+# 6. LOAD LEXICAL SOPHISTICATION FEATURES
 # ============================================
 
 lex_soph_df = pd.read_csv(LEX_SOPH_FILE)
@@ -233,7 +285,7 @@ lex_df = lex_div_df.merge(
         ]
     ],
     on=["class_name", "file_name"],
-    how="inner"
+    how="inner",
 )
 
 
@@ -264,17 +316,17 @@ overall_df = (
     .merge(
         fluency_df,
         on=["class_name", "file_name"],
-        how="inner"
+        how="inner",
     )
     .merge(
         lex_df,
         on=["class_name", "file_name"],
-        how="inner"
+        how="inner",
     )
     .merge(
         pron_df,
         on=["class_name", "file_name"],
-        how="inner"
+        how="inner",
     )
 )
 
@@ -318,15 +370,15 @@ overall_df = overall_df.rename(
 
 
 # ============================================
-# 11. DEFINE FEATURES AND TARGETS
+# 11. DEFINE FEATURES FOR EACH MODEL
 # ============================================
 
-overall_features = [
-    # Fluency
+fluency_features = [
     "flu_speech_rate",
     "flu_pause_ratio",
+]
 
-    # Lexical
+lexical_features = [
     "lex_TTR",
     "lex_MSTTR",
     "lex_A1",
@@ -334,8 +386,9 @@ overall_features = [
     "lex_B1",
     "lex_B2",
     "lex_C1",
+]
 
-    # Pronunciation
+pronunciation_features = [
     "pro_0%-50%",
     "pro_50%-70%",
     "pro_70%-85%",
@@ -343,11 +396,27 @@ overall_features = [
     "pro_95%-100%",
 ]
 
+# Overall model dùng toàn bộ feature gốc của ba nhóm.
+# Không dùng prediction của ba model con làm feature.
+overall_features = (
+    fluency_features
+    + lexical_features
+    + pronunciation_features
+)
+
+# Train ba model thành phần trước, sau đó train overall model.
 targets = {
-    "overall": "avg_overall",
     "fluency": "avg_fluency",
     "lexical": "avg_lexical",
     "pronunciation": "avg_pronunciation",
+    "overall": "avg_overall",
+}
+
+features_by_model = {
+    "fluency": fluency_features,
+    "lexical": lexical_features,
+    "pronunciation": pronunciation_features,
+    "overall": overall_features,
 }
 
 
@@ -355,7 +424,11 @@ targets = {
 # 12. CHECK REQUIRED COLUMNS
 # ============================================
 
-required_cols = overall_features + list(targets.values())
+required_cols = list(
+    dict.fromkeys(
+        overall_features + list(targets.values())
+    )
+)
 
 missing_cols = [
     col for col in required_cols
@@ -379,58 +452,89 @@ for col in overall_features:
     overall_df[col] = pd.to_numeric(overall_df[col], errors="coerce")
 
     median_value = overall_df[col].median()
-    feature_medians[col] = float(median_value)
 
+    if pd.isna(median_value):
+        raise ValueError(
+            f"Feature '{col}' has no valid numeric value after merge."
+        )
+
+    feature_medians[col] = float(median_value)
     overall_df[col] = overall_df[col].fillna(median_value)
 
 
-# Save feature medians for backend
-feature_medians_path = MODEL_DIR / "feature_medians.json"
+# ============================================
+# 14. SAVE FEATURE CONFIGURATION FOR BACKEND
+# ============================================
 
-with open(feature_medians_path, "w", encoding="utf-8") as f:
-    json.dump(feature_medians, f, ensure_ascii=False, indent=4)
-
-print("\nSaved feature medians to:", feature_medians_path)
-
-
-# Save feature columns for backend
+# Giữ file cũ để tương thích với phần backend đang dùng overall model.
 feature_columns_path = MODEL_DIR / "feature_columns.json"
 
-with open(feature_columns_path, "w", encoding="utf-8") as f:
-    json.dump(overall_features, f, ensure_ascii=False, indent=4)
+with open(feature_columns_path, "w", encoding="utf-8") as file:
+    json.dump(overall_features, file, ensure_ascii=False, indent=4)
 
-print("Saved feature columns to:", feature_columns_path)
+print("\nSaved overall feature columns to:", feature_columns_path)
+
+
+# File mới: lưu đúng feature theo từng model.
+feature_columns_by_model_path = MODEL_DIR / "feature_columns_by_model.json"
+
+with open(feature_columns_by_model_path, "w", encoding="utf-8") as file:
+    json.dump(features_by_model, file, ensure_ascii=False, indent=4)
+
+print("Saved feature columns by model to:", feature_columns_by_model_path)
+
+
+# Lưu median để backend có thể fill feature thiếu trước khi predict.
+feature_medians_path = MODEL_DIR / "feature_medians.json"
+
+with open(feature_medians_path, "w", encoding="utf-8") as file:
+    json.dump(feature_medians, file, ensure_ascii=False, indent=4)
+
+print("Saved feature medians to:", feature_medians_path)
 
 
 # ============================================
-# 14. 5-FOLD CROSS VALIDATION
+# 15. PREPARE 5-FOLD CROSS VALIDATION
 # ============================================
 
 kf = KFold(
     n_splits=N_SPLITS,
     shuffle=True,
-    random_state=RANDOM_STATE
+    random_state=RANDOM_STATE,
 )
 
 all_metrics = []
 all_preds = []
 
-# For overall SHAP across 5 CV folds
-overall_fold_models = []
+# Chỉ tổng hợp SHAP theo 5 fold cho overall model.
 overall_shap_values_list = []
 overall_X_test_list = []
 overall_shap_importance_list = []
 
 
+# ============================================
+# 16. RUN 5-FOLD CROSS VALIDATION
+# ============================================
+
 print("\n===== START 5-FOLD CROSS VALIDATION =====")
 
 for target_name, target_column in targets.items():
-
     print(f"\n===== TARGET: {target_name.upper()} =====")
+
+    current_features = features_by_model[target_name]
+
+    print("Features:", current_features)
+    print("Model params:", MODEL_PARAMS_BY_TARGET[target_name])
 
     data = overall_df.dropna(subset=[target_column]).copy()
 
-    X_target = data[overall_features]
+    if len(data) < N_SPLITS:
+        raise ValueError(
+            f"Target '{target_column}' only has {len(data)} valid rows, "
+            f"but N_SPLITS={N_SPLITS}."
+        )
+
+    X_target = data[current_features]
     y_target = data[target_column]
 
     maes = []
@@ -438,23 +542,14 @@ for target_name, target_column in targets.items():
     r2s = []
     qwks = []
 
-    for fold, (train_idx, test_idx) in enumerate(kf.split(X_target), 1):
-
+    for fold, (train_idx, test_idx) in enumerate(kf.split(X_target), start=1):
         X_train = X_target.iloc[train_idx]
         X_test = X_target.iloc[test_idx]
 
         y_train = y_target.iloc[train_idx]
         y_test = y_target.iloc[test_idx]
 
-        model = CatBoostRegressor(
-            iterations=300,
-            learning_rate=0.05,
-            depth=4,
-            loss_function="RMSE",
-            random_seed=RANDOM_STATE,
-            verbose=False
-        )
-
+        model = create_model(target_name)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
@@ -494,8 +589,6 @@ for target_name, target_column in targets.items():
         # SAVE SHAP ONLY FOR OVERALL TARGET
         # ============================================
         if target_name == "overall":
-            overall_fold_models.append(model)
-
             explainer = shap.TreeExplainer(model)
             shap_values_fold = explainer.shap_values(X_test)
 
@@ -505,7 +598,7 @@ for target_name, target_column in targets.items():
             shap_importance_fold = pd.DataFrame(
                 {
                     "fold": fold,
-                    "feature": overall_features,
+                    "feature": current_features,
                     "mean_abs_shap": np.abs(shap_values_fold).mean(axis=0),
                 }
             )
@@ -515,6 +608,9 @@ for target_name, target_column in targets.items():
     all_metrics.append(
         {
             "target": target_name,
+            "num_rows": len(data),
+            "num_features": len(current_features),
+            "features": ", ".join(current_features),
             "MAE_mean": np.mean(maes),
             "MAE_std": np.std(maes),
             "RMSE_mean": np.mean(rmses),
@@ -528,7 +624,7 @@ for target_name, target_column in targets.items():
 
 
 # ============================================
-# 15. EXPORT CV RESULTS
+# 17. EXPORT CV RESULTS
 # ============================================
 
 metrics_df = pd.DataFrame(all_metrics)
@@ -544,16 +640,21 @@ print("\nSaved metrics to:", metrics_path)
 predictions_df = pd.concat(all_preds, ignore_index=True)
 
 predictions_long_path = OUTPUT_DIR / "catboost_predictions_long_all_targets.csv"
-predictions_df.to_csv(predictions_long_path, index=False, encoding="utf-8-sig")
+predictions_df.to_csv(
+    predictions_long_path,
+    index=False,
+    encoding="utf-8-sig",
+)
 
 print("Saved long predictions to:", predictions_long_path)
+
 
 
 wide_predictions_df = predictions_df.pivot_table(
     index=["file_name"],
     columns="target",
     values=["true_score", "pred_score"],
-    aggfunc="first"
+    aggfunc="first",
 )
 
 wide_predictions_df.columns = [
@@ -579,7 +680,6 @@ ordered_cols = [
     "overall_true_score",
 ]
 
-# Chỉ lấy các cột tồn tại để tránh lỗi nếu target nào đó thiếu
 ordered_cols_existing = [
     col for col in ordered_cols
     if col in wide_predictions_df.columns
@@ -588,7 +688,11 @@ ordered_cols_existing = [
 wide_predictions_df = wide_predictions_df[ordered_cols_existing]
 
 wide_predictions_path = OUTPUT_DIR / "catboost_predictions_wide_all_targets.csv"
-wide_predictions_df.to_csv(wide_predictions_path, index=False, encoding="utf-8-sig")
+wide_predictions_df.to_csv(
+    wide_predictions_path,
+    index=False,
+    encoding="utf-8-sig",
+)
 
 print("\n===== PREDICTION SAMPLE =====")
 print(wide_predictions_df.head(20))
@@ -596,18 +700,16 @@ print("\nSaved wide predictions to:", wide_predictions_path)
 
 
 # ============================================
-# 16. COMBINE OVERALL SHAP VALUES FROM 5 FOLDS
+# 18. COMBINE OVERALL SHAP VALUES FROM 5 FOLDS
 # ============================================
 
 if overall_shap_values_list and overall_X_test_list:
-
     overall_shap_values_cv = np.vstack(overall_shap_values_list)
     overall_X_test_cv = pd.concat(overall_X_test_list, axis=0)
 
-    # SHAP importance table
     overall_shap_importance_df = pd.concat(
         overall_shap_importance_list,
-        ignore_index=True
+        ignore_index=True,
     )
 
     overall_shap_importance_summary = (
@@ -621,14 +723,13 @@ if overall_shap_values_list and overall_X_test_list:
     overall_shap_importance_summary.to_csv(
         shap_importance_path,
         index=False,
-        encoding="utf-8-sig"
+        encoding="utf-8-sig",
     )
 
     print("\n===== OVERALL SHAP IMPORTANCE =====")
     print(overall_shap_importance_summary)
     print("\nSaved SHAP importance to:", shap_importance_path)
 
-    # SHAP summary dot plot
     plt.figure(figsize=(10, 7))
 
     shap.summary_plot(
@@ -636,12 +737,12 @@ if overall_shap_values_list and overall_X_test_list:
         overall_X_test_cv,
         feature_names=overall_features,
         show=False,
-        max_display=len(overall_features)
+        max_display=len(overall_features),
     )
 
     plt.title(
         "SHAP Summary Plot - Overall Model across 5 CV Folds",
-        fontsize=14
+        fontsize=14,
     )
 
     plt.tight_layout()
@@ -654,7 +755,7 @@ if overall_shap_values_list and overall_X_test_list:
 
 
 # ============================================
-# 17. TRAIN FINAL MODELS ON FULL DATASET
+# 19. TRAIN FINAL MODELS ON FULL DATASET
 # ============================================
 
 final_models = {}
@@ -662,23 +763,15 @@ final_models = {}
 print("\n===== TRAIN FINAL MODELS ON FULL DATASET =====")
 
 for target_name, target_column in targets.items():
-
     print(f"\n===== TRAIN FINAL MODEL FOR {target_name.upper()} =====")
 
+    current_features = features_by_model[target_name]
     data = overall_df.dropna(subset=[target_column]).copy()
 
-    X_final = data[overall_features]
+    X_final = data[current_features]
     y_final = data[target_column]
 
-    final_model = CatBoostRegressor(
-        iterations=300,
-        learning_rate=0.05,
-        depth=4,
-        loss_function="RMSE",
-        random_seed=RANDOM_STATE,
-        verbose=False
-    )
-
+    final_model = create_model(target_name)
     final_model.fit(X_final, y_final)
 
     final_models[target_name] = final_model
@@ -686,60 +779,66 @@ for target_name, target_column in targets.items():
     model_path = MODEL_DIR / f"{target_name}_score_model.cbm"
     final_model.save_model(str(model_path))
 
+    print("Features:", current_features)
     print(f"Saved {target_name} model to: {model_path}")
 
 
 # ============================================
-# 18. TRAIN FINAL OVERALL SHAP EXPLAINER SAMPLE
+# 20. SAVE SHAP BACKGROUND DATA
 # ============================================
 
-# Lưu background data để backend có thể dùng cho SHAP nếu cần
+# Lưu toàn bộ feature để backend có thể chọn cột theo model khi cần giải thích.
 background_data = overall_df[overall_features].copy()
 
 background_path = MODEL_DIR / "shap_background_data.csv"
-background_data.to_csv(background_path, index=False, encoding="utf-8-sig")
+background_data.to_csv(
+    background_path,
+    index=False,
+    encoding="utf-8-sig",
+)
 
 print("\nSaved SHAP background data to:", background_path)
 
 
 # ============================================
-# 19. SAVE TRAINING METADATA
+# 21. SAVE TRAINING METADATA
 # ============================================
 
 training_metadata = {
     "n_splits": N_SPLITS,
     "random_state": RANDOM_STATE,
     "features": overall_features,
+    "features_by_model": features_by_model,
     "targets": targets,
-    "model_params": {
-        "iterations": 300,
-        "learning_rate": 0.05,
-        "depth": 4,
-        "loss_function": "RMSE",
-        "random_seed": RANDOM_STATE,
-        "verbose": False,
-    },
+    "model_params_by_target": MODEL_PARAMS_BY_TARGET,
     "saved_models": {
         target_name: str(MODEL_DIR / f"{target_name}_score_model.cbm")
-        for target_name in targets.keys()
+        for target_name in targets
+    },
+    "saved_config_files": {
+        "feature_columns": str(feature_columns_path),
+        "feature_columns_by_model": str(feature_columns_by_model_path),
+        "feature_medians": str(feature_medians_path),
+        "shap_background_data": str(background_path),
     },
 }
 
 metadata_path = MODEL_DIR / "training_metadata.json"
 
-with open(metadata_path, "w", encoding="utf-8") as f:
-    json.dump(training_metadata, f, ensure_ascii=False, indent=4)
+with open(metadata_path, "w", encoding="utf-8") as file:
+    json.dump(training_metadata, file, ensure_ascii=False, indent=4)
 
 print("Saved training metadata to:", metadata_path)
 
 
 # ============================================
-# 20. DONE
+# 22. DONE
 # ============================================
 
 print("\n===== TRAINING COMPLETED SUCCESSFULLY =====")
 print("Model directory:", MODEL_DIR)
 print("Output directory:", OUTPUT_DIR)
 
-print("\nExpected backend model file:")
-print(MODEL_DIR / "overall_score_model.cbm")
+print("\nSaved final model files:")
+for target_name in targets:
+    print("-", MODEL_DIR / f"{target_name}_score_model.cbm")
