@@ -62,10 +62,12 @@ function renderFluency() {
 function renderLexical() {
     const d = dashboardData;
 
+    
+
     const fig = d.charts.lexical_bar;
 
     Plotly.newPlot("lexicalMainChart", fig.data, fig.layout);
-    Plotly.newPlot("lexicalDiversityChart", d.charts.lexical_diversity_bar.data);
+    Plotly.newPlot("lexicalDiversityChart", d.charts.lexical_diversity_bar.data, d.charts.lexical_diversity_bar.layout);
 
     document.getElementById("lexicalDiversityFeedbackText").innerText =
         d.feedback.lexical_diversity;
