@@ -335,7 +335,7 @@ body {
     border: 1px solid rgba(79, 143, 179, 0.14);
     border-radius: 12px;
 
-    background-color: var(--result-blue-soft);
+    background-color: #ebf5ef;
 
     text-align: center;
 
@@ -343,19 +343,19 @@ body {
 }
 
 .mini-card:nth-child(2) {
-    background-color: var(--result-primary-soft);
+    background-color: #daf1e4;
 }
 
 .mini-card:nth-child(3) {
-    background-color: var(--result-yellow-soft);
+    background-color: #d6f2e2;
 }
 
 .mini-card:nth-child(4) {
-    background-color: var(--result-pink-soft);
+    background-color: #c9f0da;
 }
 
 .mini-card:nth-child(5) {
-    background-color: #e6f4ec;
+    background-color: #c8f8dd;
 }
 
 .mini-card div {

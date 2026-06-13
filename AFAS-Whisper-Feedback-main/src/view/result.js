@@ -82,8 +82,7 @@ function renderPronunciation() {
     document.getElementById("p70_85").innerText = format2(d.pronunciation.score_70_85);
     document.getElementById("p85_95").innerText = format2(d.pronunciation.score_85_95);
     document.getElementById("p95_100").innerText = format2(d.pronunciation.score_95_100);
-    document.getElementById("pronunciationScoreValue").innerText =
-        format2(d.pronunciation.pronunciation_score ?? 0);
+
 
     const fig = d.charts.pronunciation_bar;
 
