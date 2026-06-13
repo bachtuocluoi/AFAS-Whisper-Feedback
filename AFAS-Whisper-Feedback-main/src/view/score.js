@@ -127,6 +127,43 @@ function renderScores() {
 }
 
 
+// ============================================
+// TÊN HIỂN THỊ CỦA CÁC FEATURE
+// ============================================
+const FEATURE_LABELS = {
+    // Lexical features
+    lex_A1: "A1-level vocabulary (%)",
+    lex_A2: "A2-level vocabulary (%)",
+    lex_B1: "B1-level vocabulary (%)",
+    lex_B2: "B2-level vocabulary (%)",
+    lex_C1: "C1-level vocabulary (%)",
+    lex_TTR: "Lexical diversity (TTR)",
+    lex_MSTTR: "Lexical diversity (MSTTR)",
+
+    // Pronunciation features
+    "pro_0%-50%": "Pronunciation confidence: 0–50% (%)",
+    "pro_50%-70%": "Pronunciation confidence: 50–70% (%)",
+    "pro_70%-85%": "Pronunciation confidence: 70–85% (%)",
+    "pro_85%-95%": "Pronunciation confidence: 85–95% (%)",
+    "pro_95%-100%": "Pronunciation confidence: 95–100% (%)",
+
+    // Fluency features
+    flu_speech_rate: "Speech rate (words per minute)",
+    flu_pause_ratio: "Pause ratio"
+};
+
+
+// ============================================
+// LẤY TÊN HIỂN THỊ
+// ============================================
+function getFeatureLabel(featureName) {
+    return FEATURE_LABELS[featureName] || featureName;
+}
+
+
+// ============================================
+// RENDER SHAP TABLE
+// ============================================
 function renderShapTable() {
     const shap = shapData?.overall;
 
@@ -140,27 +177,32 @@ function renderShapTable() {
     tbody.innerHTML = "";
 
     shap.features.forEach(item => {
-
         const color =
             item.impact === "increase"
                 ? "#16a34a"
                 : "#dc2626";
 
+        const featureLabel = getFeatureLabel(item.feature);
+
         tbody.innerHTML += `
-      <tr>
-        <td>${item.feature}</td>
+            <tr>
+                <td title="${item.feature}">
+                    ${featureLabel}
+                </td>
 
-        <td>${format2(item.feature_value)}</td>
+                <td>
+                    ${format2(item.feature_value)}
+                </td>
 
-        <td style="color:${color};font-weight:bold;">
-          ${format2(item.shap_value)}
-        </td>
+                <td style="color: ${color}; font-weight: bold;">
+                    ${format2(item.shap_value)}
+                </td>
 
-        <td style="color:${color};font-weight:bold;">
-          ${item.impact}
-        </td>
-      </tr>
-    `;
+                <td style="color: ${color}; font-weight: bold;">
+                    ${item.impact}
+                </td>
+            </tr>
+        `;
     });
 }
 
