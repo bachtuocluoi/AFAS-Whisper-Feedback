@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./asr.db"
     
     # Whisper ASR Configuration
-    whisper_model: str = "medium.en"
+    whisper_model: str = "small.en"
     
     # Feature Extraction Parameters
     pause_threshold: float = 0.25  # seconds
