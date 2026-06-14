@@ -1,7 +1,7 @@
 import whisper
 import pandas as pd
 
-model = whisper.load_model("base.en")
+model = whisper.load_model("medium.en")
 
 def transcribe_with_prob(model, file_in, file_out):
 
