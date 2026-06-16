@@ -14,34 +14,34 @@ class Settings(BaseSettings):
     
     Attributes:
         database_url: SQLite database connection string
-        whisper_model: Whisper model name to use (e.g., "base.en")
+        whisper_model: Whisper model name to use (e.g., "small.en")
         pause_threshold: Minimum gap duration (seconds) to consider as a pause
         msttr_segment_size: Segment size for Mean Segmental Type-Token Ratio calculation
         cefr_dict_path: Path to CEFR level dictionary CSV file
     """
     
     # Database Configuration
-    database_url: str = "sqlite:///./asr.db"
+    database_url: str 
     
     # Whisper ASR Configuration
-    whisper_model: str = "small.en"
+    whisper_model: str
     
     # Feature Extraction Parameters
-    pause_threshold: float = 0.25  # seconds
-    msttr_segment_size: int = 50
+    pause_threshold: float #seconds
+    msttr_segment_size: int 
     
     # Data Paths
-    cefr_dict_path: str = "data/oxford_cerf.csv"
+    cefr_dict_path: str
 
-    backend_base_url: str = "http://127.0.0.1:8100"
+    backend_base_url: str
     
     class Config:
         env_file = ".env"
         case_sensitive = False
         
-    SECRET_KEY: str = "nanimo2510katariwa3004shinaishiroisakurano0206hananokisetsuwa"
-    JWT_ALG: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60  # 1 giờ
+    SECRET_KEY: str
+    JWT_ALG: str
+    ACCESS_TOKEN_EXPIRE_SECONDS: int 
 
 
 # Global settings instance
