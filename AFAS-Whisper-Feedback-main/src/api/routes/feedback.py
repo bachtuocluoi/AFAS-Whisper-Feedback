@@ -60,8 +60,9 @@ def create_feedback(
         feedback=feedback.feedback,
         fluency_id=feedback.fluency_id,
         lexical_id=feedback.lexical_id,
-        pronunciation_id=feedback.pronunciation_id,
-        grammar_id=feedback.grammar_id
+        grammar_id=feedback.grammar_id,
+        pronunciation_id=feedback.pronunciation_id
+
     )
     
     db.add(db_feedback)

@@ -17,6 +17,7 @@ def parse_feedback_text(text: str):
         "pause": "",
         "lexical_diversity": "",
         "lexical_level": "",
+        "grammar": "",
         "pronunciation": ""
     }
 
@@ -28,6 +29,7 @@ def parse_feedback_text(text: str):
         ("pause", "Pause:"),
         ("lexical_diversity", "Lexical diversity:"),
         ("lexical_level", "Lexical level:"),
+        ("grammar", "Grammar:"),
         ("pronunciation", "Pronunciation:")
     ]
 
@@ -56,6 +58,7 @@ def get_result_dashboard(submit_id: int, db: db_dependency):
     fluency = db.query(models.Fluency).filter(models.Fluency.submit_id == submit_id).first()
     lexical = db.query(models.Lexical).filter(models.Lexical.submit_id == submit_id).first()
     pronunciation = db.query(models.Pronunciation).filter(models.Pronunciation.submit_id == submit_id).first()
+    grammar = db.query(models.Grammar).filter(models.Grammar.submit_id == submit_id).first()
     feedback = db.query(models.Feedback).filter(models.Feedback.submit_id == submit_id).first()
 
     if not fluency and not lexical and not pronunciation and not feedback:
@@ -65,6 +68,7 @@ def get_result_dashboard(submit_id: int, db: db_dependency):
         "fluency": None,
         "lexical": None,
         "pronunciation": None,
+        "grammar": None,
         "feedback": None,
         "charts": {}
     }
@@ -100,7 +104,22 @@ def get_result_dashboard(submit_id: int, db: db_dependency):
         }
         payload["charts"]["pronunciation_bar"] = build_pronunciation_bar_chart(payload["pronunciation"]).to_dict()
 
+    if grammar:
+        payload["grammar"] = {
+            "id": grammar.id,
+            "submit_id": grammar.submit_id,
+            "ratio_error_sentences": round(
+                float(grammar.ratio_error_sentences or 0.0),
+                2
+            ),
+            "total_errors": int(grammar.total_errors or 0),
+            "error_rate": round(float(grammar.error_rate or 0.0), 2)
+        }
+
     if feedback:
         payload["feedback"] = parse_feedback_text(feedback.feedback)
+
+    if not fluency and not lexical and not pronunciation and not grammar and not feedback:
+        raise HTTPException(status_code=404, detail="No result data found")
 
     return payload

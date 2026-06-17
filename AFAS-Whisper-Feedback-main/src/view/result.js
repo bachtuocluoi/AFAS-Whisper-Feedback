@@ -146,7 +146,7 @@ function renderGrammar() {
     const grammar = dashboardData?.grammar;
     const fb = dashboardData?.feedback;
 
-    if (!grammar?.grammar) {
+    if (!grammar) {
         document.getElementById("grammarErrorSentenceRatio").innerText = "N/A";
         document.getElementById("grammarTotalErrors").innerText = "N/A";
         document.getElementById("grammarErrorRate").innerText = "N/A";
