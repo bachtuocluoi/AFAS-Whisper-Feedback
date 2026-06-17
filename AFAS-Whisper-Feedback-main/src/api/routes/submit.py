@@ -15,7 +15,6 @@ from src.services.feedback_service import generate_feedback
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.submit import SubmitCreate, SubmitResponse
-# from src.services.asr_service import get_asr_service
 from src.auth.get_user import get_current_user, check_submit_owned_user
 from src.services.score_service import predict_scores_with_shap_from_features
 from src.create_queue import asr_queue

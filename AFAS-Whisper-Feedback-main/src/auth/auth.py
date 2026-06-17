@@ -1,8 +1,14 @@
 from datetime import datetime, timedelta, timezone
+from encodings.punycode import T
 from passlib.context import CryptContext
 from authlib.jose import jwt
 from authlib.jose.errors import BadSignatureError
 from config.settings import settings
+from enum import Enum
+
+class TokenType(Enum):
+    ACCESS = 1
+    REFRESH = 2
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -15,9 +21,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(user_id: int, username: str) -> str:
+def create_access_token(user_id: int, username: str, token_type: TokenType = TokenType.ACCESS) -> str:
     now = datetime.now(timezone.utc)
-    exp = now + timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_SECONDS)
+    exp = now
+    if token_type == TokenType.ACCESS:
+        exp += timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_SECONDS)
+    elif token_type == TokenType.REFRESH:
+        exp += timedelta(seconds=settings.REFRESH_TOKEN_EXPIRE_SECONDS)
 
     header = {"alg": settings.JWT_ALG}
     payload = {

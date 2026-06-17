@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "nanimo2510katariwa3004shinaishiroisakurano0206hananokisetsuwa"
     JWT_ALG: str = "HS256"
     ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60  # 1 giờ
-
+    REFRESH_TOKEN_EXPIRE_SECONDS: int = 7 * 24 * 60 * 60
 
 # Global settings instance
 settings = Settings()

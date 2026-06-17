@@ -204,6 +204,7 @@ class User(Base):
     full_name = Column(String, nullable=True)
 
     submits: Mapped[List["Submit"]] = relationship("Submit", back_populates="user")
+    refresh_token = relationship("RefreshToken", back_populates="user")
 
 
 
@@ -246,3 +247,12 @@ class Score(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
     
     submit = relationship("Submit", back_populates="scores")
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_token"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), index=True)
+    refresh_token = Column(String, nullable=False)
+
+    user = relationship("User", back_populates="refresh_token")
