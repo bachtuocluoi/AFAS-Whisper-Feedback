@@ -185,10 +185,11 @@ def submit_audio(
 
         db_grammar = models.Grammar(
             submit_id=db_submit.id,
-            ratio_error_sentences=grammar_data["ratio_error_sentences"],
-            total_errors=grammar_data["total_errors"],
-            error_rate=grammar_data["error_rate"]
+            ratio_error_sentences=float(grammar_data.get("ratio_error_sentences") or 0.0),
+            total_errors=int(grammar_data.get("total_errors") or 0),
+            error_rate=float(grammar_data.get("error_rate") or 0.0),
         )
+
 
         db.add(db_grammar)
         db_submit.progress = 85
@@ -234,8 +235,8 @@ def submit_audio(
             f"Pause: {feedback_result['pause']}"
             f"Lexical diversity: {feedback_result['lexical_diversity']}"
             f"Lexical level: {feedback_result['lexical_level']}"
-            f"Pronunciation: {feedback_result['pronunciation']}"
             f"Grammar: {feedback_result['grammar']}"
+            f"Pronunciation: {feedback_result['pronunciation']}"
         )
 
         db_feedback = models.Feedback(
@@ -273,8 +274,8 @@ def submit_audio(
             user_id=db_submit.user_id,
             fluency_score=score_data["fluency_score"],
             lexical_score=score_data["lexical_score"],
-            pronunciation_score=score_data["pronunciation_score"],
             grammar_score=score_data["grammar_score"], 
+            pronunciation_score=score_data["pronunciation_score"],
             overall_score=score_data["overall_score"],
             shap_values=json.dumps(shap_data, ensure_ascii=False)
         )

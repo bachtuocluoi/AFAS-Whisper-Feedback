@@ -1,38 +1,23 @@
 """
-Score prediction service using Linear Regression models.
+Score prediction service.
 
 This service predicts speaking scores from extracted features and generates
-local explanation values for the OVERALL linear regression model.
+local SHAP explanations for the OVERALL model only.
 
 Important rule:
 - Prediction:
     Each model uses feature_columns_by_model.json.
-- Explanation:
+- SHAP:
     Only the overall model is explained, using feature_columns.json.
-
-For Linear Regression with StandardScaler:
-    local contribution = coefficient * standardized_feature_value
-
-This keeps the same output structure as SHAP:
-{
-    "shap": {
-        "overall": {
-            "base_value": ...,
-            "prediction_raw": ...,
-            "prediction": ...,
-            "features": [...]
-        }
-    }
-}
 """
 
 import json
 import math
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-import joblib
 import pandas as pd
+from catboost import CatBoostRegressor, Pool
 
 
 # ============================================
@@ -53,20 +38,25 @@ def round_half(score: float) -> float:
 # PATHS
 # ============================================
 
+# Current file: src/services/score_service.py
+# parents[2] points to the project root.
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 MODEL_DIR = BASE_DIR / "ml_models"
 
+# feature_columns.json is a LIST of all features used by the overall model.
 FEATURE_COLUMNS_PATH = MODEL_DIR / "feature_columns.json"
+
+# feature_columns_by_model.json is a DICT.
 FEATURE_COLUMNS_BY_MODEL_PATH = MODEL_DIR / "feature_columns_by_model.json"
+
 FEATURE_MEDIANS_PATH = MODEL_DIR / "feature_medians.json"
 
 MODEL_PATHS = {
-    "overall": MODEL_DIR / "overall_score_model_linear.pkl",
-    "fluency": MODEL_DIR / "fluency_score_model_linear.pkl",
-    "lexical": MODEL_DIR / "lexical_score_model_linear.pkl",
-    "pronunciation": MODEL_DIR / "pronunciation_score_model_linear.pkl",
-    "grammar": MODEL_DIR / "grammar_score_model_linear.pkl",
+    "overall": MODEL_DIR / "overall_score_model.cbm",
+    "fluency": MODEL_DIR / "fluency_score_model.cbm",
+    "lexical": MODEL_DIR / "lexical_score_model.cbm",
+    "pronunciation": MODEL_DIR / "pronunciation_score_model.cbm",
 }
 
 
@@ -74,7 +64,7 @@ MODEL_PATHS = {
 # CACHE
 # ============================================
 
-_MODEL_CACHE: Dict[str, Any] = {}
+_MODEL_CACHE: Dict[str, CatBoostRegressor] = {}
 _JSON_CACHE: Dict[str, Any] = {}
 
 
@@ -110,8 +100,8 @@ def load_overall_feature_columns() -> List[str]:
         X[overall_feature_columns]
 
     It is used for:
-    - building the full feature input
-    - overall explanation
+    - building the full 14-feature input
+    - overall SHAP explanation
     """
     feature_columns = _load_json(FEATURE_COLUMNS_PATH)
 
@@ -132,7 +122,6 @@ def load_features_by_model() -> Dict[str, List[str]]:
         "fluency": [...],
         "lexical": [...],
         "pronunciation": [...],
-        "grammar": [...],
         "overall": [...]
     }
     """
@@ -140,7 +129,8 @@ def load_features_by_model() -> Dict[str, List[str]]:
 
     if not isinstance(features_by_model, dict):
         raise TypeError(
-            "feature_columns_by_model.json must be a dictionary."
+            "feature_columns_by_model.json must be a dictionary, "
+            "not a list."
         )
 
     required_targets = [
@@ -148,7 +138,6 @@ def load_features_by_model() -> Dict[str, List[str]]:
         "fluency",
         "lexical",
         "pronunciation",
-        "grammar",
     ]
 
     for target_name in required_targets:
@@ -166,25 +155,22 @@ def load_features_by_model() -> Dict[str, List[str]]:
     return features_by_model
 
 
-def _load_model(model_path: Path) -> Any:
+def _load_model(model_path: Path) -> CatBoostRegressor:
     """
-    Load a Linear Regression pipeline from disk.
-
-    Expected model format:
-        Pipeline([
-            ("scaler", StandardScaler()),
-            ("linear_regression", LinearRegression())
-        ])
+    Load a CatBoost model from disk.
     """
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
-    return joblib.load(model_path)
+    model = CatBoostRegressor()
+    model.load_model(str(model_path))
+
+    return model
 
 
-def load_score_model(target_name: str) -> Any:
+def load_score_model(target_name: str) -> CatBoostRegressor:
     """
-    Load and cache a Linear Regression model by target name.
+    Load and cache a CatBoost model by target name.
     """
     if target_name in _MODEL_CACHE:
         return _MODEL_CACHE[target_name]
@@ -207,18 +193,14 @@ def build_score_features(
     lexical_cefr: Dict[str, Any],
     lexical_diversity: Dict[str, Any],
     pronunciation_data: Dict[str, Any],
-    grammar_data: Optional[Dict[str, Any]] = None,
 ) -> pd.DataFrame:
     """
-    Build one-row DataFrame containing all overall features.
+    Build one-row DataFrame containing all 14 overall features.
 
     Later:
     - each score model selects its own columns from feature_columns_by_model.json
-    - explanation selects overall columns from feature_columns.json
+    - SHAP selects overall columns from feature_columns.json
     """
-
-    if grammar_data is None:
-        grammar_data = {}
 
     overall_feature_columns = load_overall_feature_columns()
     feature_medians = _load_json(FEATURE_MEDIANS_PATH)
@@ -245,11 +227,6 @@ def build_score_features(
         "pro_70%-85%": pronunciation_data.get("score_70_85", 0.0),
         "pro_85%-95%": pronunciation_data.get("score_85_95", 0.0),
         "pro_95%-100%": pronunciation_data.get("score_95_100", 0.0),
-
-        # Grammar
-        "gra_ratio_error_sentences": grammar_data.get("ratio_error_sentences",0.0,),
-        "gra_total_errors": grammar_data.get("total_errors", 0.0),
-        "gra_error_rate": grammar_data.get("error_rate", 0.0),
     }
 
     X = pd.DataFrame([feature_dict])
@@ -261,6 +238,8 @@ def build_score_features(
         X[col] = pd.to_numeric(X[col], errors="coerce")
         X[col] = X[col].fillna(feature_medians.get(col, 0.0))
 
+    # IMPORTANT:
+    # overall_feature_columns comes from feature_columns.json, so it is a list.
     X = X[overall_feature_columns]
 
     return X
@@ -296,13 +275,13 @@ def select_features_for_prediction(
     return X_all[target_features]
 
 
-def select_features_for_overall_explanation(
+def select_features_for_overall_shap(
     X_all: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Select feature columns for overall explanation.
+    Select feature columns for overall SHAP.
 
-    This uses feature_columns.json.
+    This uses feature_columns.json, not feature_columns_by_model.json.
     """
     overall_feature_columns = load_overall_feature_columns()
 
@@ -313,7 +292,7 @@ def select_features_for_overall_explanation(
 
     if missing_cols:
         raise ValueError(
-            "Missing overall explanation feature columns: "
+            "Missing overall SHAP feature columns: "
             + ", ".join(missing_cols)
         )
 
@@ -331,84 +310,61 @@ def clip_score(score: float) -> float:
     return max(0.0, min(9.0, float(score)))
 
 
-def _predict_raw_score(
-    model: Any,
+def _predict_score(
+    model: CatBoostRegressor,
     X: pd.DataFrame,
 ) -> float:
     """
-    Predict raw score using loaded Linear Regression model.
+    Predict raw score using loaded CatBoost model.
     """
     pred = model.predict(X)[0]
-    return float(pred)
+    return clip_score(pred)
 
 
 # ============================================
-# LINEAR EXPLANATION
+# SHAP
 # ============================================
 
 def _make_overall_local_shap_dict(
-    model: Any,
+    model: CatBoostRegressor,
     X_overall: pd.DataFrame,
     prediction_raw: float,
     prediction_rounded: float,
 ) -> dict:
     """
-    Create local explanation for the overall Linear Regression model.
+    Create local SHAP explanation for the overall model only.
 
-    Because the model is:
-        StandardScaler -> LinearRegression
-
-    contribution per feature is:
-        coefficient * standardized_feature_value
-
-    This keeps the same output format as the old CatBoost SHAP output.
+    X_overall must use feature_columns.json.
     """
 
-    if not hasattr(model, "named_steps"):
-        raise TypeError(
-            "Overall model must be a sklearn Pipeline with named_steps."
-        )
+    shap_values = model.get_feature_importance(
+        data=Pool(X_overall),
+        type="ShapValues",
+    )
 
-    if "scaler" not in model.named_steps:
-        raise KeyError("Pipeline is missing 'scaler' step.")
-
-    if "linear_regression" not in model.named_steps:
-        raise KeyError("Pipeline is missing 'linear_regression' step.")
-
-    scaler = model.named_steps["scaler"]
-    linear_model = model.named_steps["linear_regression"]
-
-    X_scaled = scaler.transform(X_overall)
-
-    coefficients = linear_model.coef_
-    intercept = float(linear_model.intercept_)
-
-    if len(coefficients) != X_overall.shape[1]:
-        raise ValueError(
-            "Number of coefficients does not match number of features."
-        )
-
-    row_scaled = X_scaled[0]
-    row_contributions = coefficients * row_scaled
+    # CatBoost returns shape: [n_samples, n_features + 1]
+    # Last value is expected value / base value.
+    row_shap = shap_values[0][:-1]
+    base_value = shap_values[0][-1]
 
     result = {
-        "base_value": round(intercept, 4),
+        "base_value": round(float(base_value), 4),
         "prediction_raw": round(float(prediction_raw), 4),
         "prediction": round(float(prediction_rounded), 1),
         "features": [],
     }
 
-    for feature_name, feature_value, contribution in zip(
+    for feature_name, feature_value, shap_value in zip(
         X_overall.columns,
         X_overall.iloc[0].values,
-        row_contributions,
+        row_shap,
     ):
         result["features"].append(
             {
                 "feature": feature_name,
                 "feature_value": round(float(feature_value), 4),
-                "shap_value": round(float(contribution), 4),
-                "impact": "increase" if contribution >= 0 else "decrease",
+                "shap_value": round(float(shap_value), 4),
+                "impact": "increase" if shap_value >= 0 else "decrease",
             }
         )
 
@@ -430,13 +386,12 @@ def predict_scores_with_shap_from_features(
     lexical_cefr: Dict[str, Any],
     lexical_diversity: Dict[str, Any],
     pronunciation_data: Dict[str, Any],
-    grammar_data: Optional[Dict[str, Any]] = None,
 ) -> dict:
     """
-    Predict scores and compute overall local explanation.
+    Predict scores and compute overall SHAP explanation.
 
     Rules:
-    1. Build all features once.
+    1. Build all 14 features once.
     2. Predict each model using feature_columns_by_model.json.
     3. Explain only the overall model using feature_columns.json.
     """
@@ -446,7 +401,6 @@ def predict_scores_with_shap_from_features(
         lexical_cefr=lexical_cefr,
         lexical_diversity=lexical_diversity,
         pronunciation_data=pronunciation_data,
-        grammar_data=grammar_data,
     )
 
     output = {
@@ -463,22 +417,27 @@ def predict_scores_with_shap_from_features(
         "fluency",
         "lexical",
         "pronunciation",
-        "grammar",
     ]:
         model = load_score_model(target_name)
 
+        # Prediction uses feature_columns_by_model.json.
         X_target = select_features_for_prediction(
             X_all=X_all,
             target_name=target_name,
         )
 
-        prediction_raw = _predict_raw_score(
+        prediction_raw = _predict_score(
             model=model,
             X=X_target,
         )
 
-        prediction_clipped = clip_score(prediction_raw)
-        prediction_rounded = round_half(prediction_clipped)
+        prediction_rounded = round_half(prediction_raw)
+
+        #print("====", target_name, "====")
+        #print("features:", list(X_target.columns))
+        #print("shape:", X_target.shape)
+        #print("raw:", prediction_raw)
+        #print("rounded:", prediction_rounded)
 
         output["scores"][f"{target_name}_score"] = round(
             float(prediction_rounded),
@@ -486,7 +445,7 @@ def predict_scores_with_shap_from_features(
         )
 
         output["raw_scores"][f"{target_name}_score"] = round(
-            float(prediction_clipped),
+            float(prediction_raw),
             4,
         )
 
@@ -494,12 +453,13 @@ def predict_scores_with_shap_from_features(
             overall_prediction_raw = prediction_raw
             overall_prediction_rounded = prediction_rounded
 
+    # SHAP only for the overall model.
     overall_model = load_score_model("overall")
-    X_overall = select_features_for_overall_explanation(X_all)
+    X_overall_shap = select_features_for_overall_shap(X_all)
 
     output["shap"]["overall"] = _make_overall_local_shap_dict(
         model=overall_model,
-        X_overall=X_overall,
+        X_overall=X_overall_shap,
         prediction_raw=overall_prediction_raw,
         prediction_rounded=overall_prediction_rounded,
     )

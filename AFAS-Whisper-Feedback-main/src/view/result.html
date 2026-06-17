@@ -14,13 +14,13 @@
     <!-- Shared AFAS theme -->
     <link
         rel="stylesheet"
-        href="/view/common.css"
+        href="/view/common.css?v=3"
     >
 
     <!-- Result page styles -->
     <link
         rel="stylesheet"
-        href="/view/result.css?v=9"
+        href="/view/result.css?v=11"
     >
 
     <!-- Existing scripts -->
@@ -84,7 +84,7 @@
 
                 <p class="result-description">
                     Review your speaking performance across fluency,
-                    lexical diversity and pronunciation. Use the feedback
+                    lexical diversity, grammar and pronunciation. Use the feedback
                     to identify areas for improvement.
                 </p>
             </section>
@@ -293,6 +293,72 @@
                     </p>
                 </div>
             </section>
+            
+            <!-- =================================================
+                GRAMMAR
+                ================================================= -->
+            <section class="result-card grammar-card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">
+                            Grammar
+                        </h2>
+
+                        <p class="card-subtitle">
+                            Review grammar accuracy based on the transcript
+                            generated from your speaking submission.
+                        </p>
+                    </div>
+
+                    <div class="result-card-icon grammar-icon">
+                        G
+                    </div>
+                </div>
+                
+                <table class="grammar-table">
+                    <tbody>
+                        <tr>
+                            <td>
+                                Error sentences
+                            </td>
+
+                            <td id="grammarErrorSentenceRatio">
+                                Loading...
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                Total errors
+                            </td>
+
+                            <td id="grammarTotalErrors">
+                                Loading...
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                Error rate
+                            </td>
+
+                            <td id="grammarErrorRate">
+                                Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="inline-feedback">
+                    <h3>
+                        Grammar feedback
+                    </h3>
+
+                    <p id="grammarFeedbackText">
+                        Loading...
+                    </p>
+                </div>
+            </section>
 
             <!-- =================================================
                  PRONUNCIATION
@@ -389,7 +455,7 @@
 
     <!-- Existing scripts -->
     <script src="/view/auth.js"></script>
-    <script src="/view/result.js?v=6"></script>
+    <script src="/view/result.js?v=10"></script>
 
 </body>
 </html>

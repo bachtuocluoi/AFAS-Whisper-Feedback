@@ -122,6 +122,10 @@ function renderScores() {
     document.getElementById("lexicalScore").innerText =
         format2(scoreData.lexical_score);
 
+    document.getElementById("grammarScore").innerText =
+    format2(scoreData.grammar_score);
+
+
     document.getElementById("pronunciationScore").innerText =
         format2(scoreData.pronunciation_score);
 }
@@ -146,6 +150,16 @@ const FEATURE_LABELS = {
     "pro_70%-85%": "Pronunciation confidence: 70–85% (%)",
     "pro_85%-95%": "Pronunciation confidence: 85–95% (%)",
     "pro_95%-100%": "Pronunciation confidence: 95–100% (%)",
+
+    // Grammar features
+    gra_ratio_error_sentences: "Grammar error sentence ratio",
+    gra_total_errors: "Total grammar errors",
+    gra_error_rate: "Grammar error rate",
+
+    grammar_ratio_error_sentences: "Grammar error sentence ratio",
+    grammar_total_errors: "Total grammar errors",
+    grammar_error_rate: "Grammar error rate",
+
 
     // Fluency features
     flu_speech_rate: "Speech rate (words per minute)",

@@ -37,6 +37,7 @@ class Submit(Base):
     fluency = relationship("Fluency", back_populates="submit", uselist=False)
     lexical = relationship("Lexical", back_populates="submit", uselist=False)
     pronunciation = relationship("Pronunciation", back_populates="submit", uselist=False)
+    grammar = relationship("Grammar", back_populates="submit", uselist=False)
     feedbacks = relationship("Feedback", back_populates="submit")
     user = relationship("User", back_populates="submits")
     scores = relationship("Score", back_populates="submit")
@@ -183,14 +184,11 @@ class Grammar(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    submit_id = Column(Integer, ForeignKey("submits.id"), unique=True, index=True)
+    submit_id = Column(Integer, ForeignKey("submit.id"), unique=True, index=True)
 
-    ratio_error_sentences = Column(Float, nullable=False)
-    total_errors = Column(Integer, nullable=False)
-    error_rate = Column(Float, nullable=False)
-
-    total_sentences = Column(Integer, nullable=False)
-    total_words = Column(Integer, nullable=False)
+    ratio_error_sentences = Column(Float, nullable=True)
+    total_errors = Column(Integer, nullable=True)
+    error_rate = Column(Float, nullable=True)
 
     # Relationship
     submit = relationship("Submit", back_populates="grammar")

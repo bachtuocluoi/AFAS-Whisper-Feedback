@@ -37,6 +37,33 @@ def f_pronunciation(score):
         return "Pronunciation quality acceptable"
 
 
+def f_grammar(error_rate, total_errors):
+    error_rate = float(error_rate or 0.0)
+    total_errors = int(total_errors or 0)
+
+    if total_errors == 0:
+        return (
+            "Your grammar is very accurate. "
+            "No grammar errors were detected in the transcript."
+        )
+
+    if error_rate <= 0.03:
+        return (
+            "Your grammar is generally accurate, "
+            "with only a few minor errors."
+        )
+
+    if error_rate <= 0.08:
+        return (
+            "Your grammar is understandable, "
+            "but there are some errors to review."
+        )
+
+    return (
+        "Your response contains several grammar errors. "
+        "Try reviewing sentence structure, verb tense, "
+        "and subject-verb agreement."
+    )
 
 def generate_feedback(features):
     """
@@ -48,10 +75,11 @@ def generate_feedback(features):
         "msttr": float,
         "b2": float,
         "c1": float,
-        "pronunciation": float
+        "pronunciation": float,
+        "grammar_error_rate": float,
+        "grammar_total_errors": int
     }
     """
-
 
     speech_rate = features.get("speech_rate", 0.0)
     pause_ratio = features.get("pause_ratio", 0.0)
@@ -60,10 +88,17 @@ def generate_feedback(features):
     c1 = features.get("c1", 0.0)
     pronunciation = features.get("pronunciation", 0.0)
 
+    grammar_error_rate = features.get("grammar_error_rate", 0.0)
+    grammar_total_errors = features.get("grammar_total_errors", 0)
+
     return {
         "fluency": f_fluency(speech_rate),
         "pause": f_pause(pause_ratio),
         "lexical_diversity": f_lexical_diversity(msttr),
         "lexical_level": f_lexical_level(b2, c1),
-        "pronunciation": f_pronunciation(pronunciation)
+        "grammar": f_grammar(
+            grammar_error_rate,
+            grammar_total_errors
+        ),
+        "pronunciation": f_pronunciation(pronunciation),
     }

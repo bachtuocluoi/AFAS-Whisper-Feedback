@@ -1,0 +1,97 @@
+{
+    "model_type": "linear_regression_with_standard_scaler",
+    "n_splits": 5,
+    "random_state": 42,
+    "features": [
+        "flu_speech_rate",
+        "flu_pause_ratio",
+        "lex_TTR",
+        "lex_MSTTR",
+        "lex_A1",
+        "lex_A2",
+        "lex_B1",
+        "lex_B2",
+        "lex_C1",
+        "pro_0%-50%",
+        "pro_50%-70%",
+        "pro_70%-85%",
+        "pro_85%-95%",
+        "pro_95%-100%",
+        "gra_ratio_error_sentences",
+        "gra_total_errors",
+        "gra_error_rate"
+    ],
+    "features_by_model": {
+        "fluency": [
+            "flu_speech_rate",
+            "flu_pause_ratio"
+        ],
+        "lexical": [
+            "lex_TTR",
+            "lex_MSTTR",
+            "lex_A1",
+            "lex_A2",
+            "lex_B1",
+            "lex_B2",
+            "lex_C1"
+        ],
+        "pronunciation": [
+            "pro_0%-50%",
+            "pro_50%-70%",
+            "pro_70%-85%",
+            "pro_85%-95%",
+            "pro_95%-100%"
+        ],
+        "grammar": [
+            "gra_ratio_error_sentences",
+            "gra_total_errors",
+            "gra_error_rate"
+        ],
+        "overall": [
+            "flu_speech_rate",
+            "flu_pause_ratio",
+            "lex_TTR",
+            "lex_MSTTR",
+            "lex_A1",
+            "lex_A2",
+            "lex_B1",
+            "lex_B2",
+            "lex_C1",
+            "pro_0%-50%",
+            "pro_50%-70%",
+            "pro_70%-85%",
+            "pro_85%-95%",
+            "pro_95%-100%",
+            "gra_ratio_error_sentences",
+            "gra_total_errors",
+            "gra_error_rate"
+        ]
+    },
+    "targets": {
+        "fluency": "avg_fluency",
+        "lexical": "avg_lexical",
+        "pronunciation": "avg_pronunciation",
+        "grammar": "avg_grammar",
+        "overall": "avg_overall"
+    },
+    "saved_models": {
+        "fluency": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\fluency_score_model_linear.pkl",
+        "lexical": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\lexical_score_model_linear.pkl",
+        "pronunciation": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\pronunciation_score_model_linear.pkl",
+        "grammar": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\grammar_score_model_linear.pkl",
+        "overall": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\overall_score_model_linear.pkl"
+    },
+    "saved_config_files": {
+        "feature_columns": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_columns.json",
+        "feature_columns_by_model": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_columns_by_model.json",
+        "feature_medians": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_medians.json",
+        "linear_background_data": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\linear_background_data.csv"
+    },
+    "saved_output_files": {
+        "metrics": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_cv_metrics_all_targets.csv",
+        "predictions_long": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_predictions_long_all_targets.csv",
+        "predictions_wide": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_predictions_wide_all_targets.csv",
+        "final_coefficients": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_final_coefficients_all_targets.csv",
+        "overall_coefficient_plot": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\overall_linear_coefficients_final.png"
+    }
+}

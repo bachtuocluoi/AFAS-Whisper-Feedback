@@ -1,12 +1,3 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
-from src import models
-from src.database import get_db
-from src.auth import get_current_user
-from src.schemas.grammar import GrammarCreate, GrammarResponse
-from src.services.grammar_service import compute_grammar_metrics
-
 
 """
 API routes for grammar metrics.
@@ -15,7 +6,7 @@ API routes for grammar metrics.
 from fastapi import APIRouter, HTTPException, Depends
 from src.api.dependencies import db_dependency
 from src.core import models
-from src.schemas.fluency import GrammarCreate, GrammarResponse
+from src.schemas.grammar import GrammarCreate, GrammarResponse
 from src.auth.get_user import get_current_user, check_submit_owned_user
 
 

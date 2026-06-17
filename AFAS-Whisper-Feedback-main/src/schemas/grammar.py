@@ -7,7 +7,6 @@ class GrammarBase(BaseModel):
     ratio_error_sentences: float
     total_errors: int
     error_rate: float
-    grammar_score: float
 
 class GrammarCreate(GrammarBase):
     """Schema for creating a new Grammar entry."""
