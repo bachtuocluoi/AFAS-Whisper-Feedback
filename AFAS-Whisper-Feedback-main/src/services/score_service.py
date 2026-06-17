@@ -127,14 +127,16 @@ def load_features_by_model() -> Dict[str, List[str]]:
     """
     Load feature_columns_by_model.json.
 
-    This file must be a dictionary:
+    This file must contain feature lists for component models:
     {
         "fluency": [...],
         "lexical": [...],
         "pronunciation": [...],
-        "grammar": [...],
-        "overall": [...]
+        "grammar": [...]
     }
+
+    Overall score is NOT predicted by a model anymore.
+    Overall = (fluency + lexical + pronunciation + grammar) / 4
     """
     features_by_model = _load_json(FEATURE_COLUMNS_BY_MODEL_PATH)
 
@@ -144,7 +146,6 @@ def load_features_by_model() -> Dict[str, List[str]]:
         )
 
     required_targets = [
-        "overall",
         "fluency",
         "lexical",
         "pronunciation",
@@ -346,68 +347,117 @@ def _predict_raw_score(
 # LINEAR EXPLANATION
 # ============================================
 
-def _make_overall_local_shap_dict(
-    model: Any,
-    X_overall: pd.DataFrame,
-    prediction_raw: float,
-    prediction_rounded: float,
+# ============================================
+# OVERALL AVERAGE EXPLANATION
+# ============================================
+
+def _make_overall_average_shap_dict(
+    component_scores: Dict[str, float],
+    overall_raw: float,
+    overall_rounded: float,
 ) -> dict:
     """
-    Create local explanation for the overall Linear Regression model.
+    Create explanation for overall score.
 
-    Because the model is:
-        StandardScaler -> LinearRegression
+    Overall is no longer predicted by a Linear Regression model.
 
-    contribution per feature is:
-        coefficient * standardized_feature_value
+    Formula:
+        overall = (
+            fluency_score
+            + lexical_score
+            + pronunciation_score
+            + grammar_score
+        ) / 4
 
-    This keeps the same output format as the old CatBoost SHAP output.
+    To keep the old frontend structure, this function returns a SHAP-like dict.
+    Each component contributes score / 4 to the final overall score.
     """
 
-    if not hasattr(model, "named_steps"):
-        raise TypeError(
-            "Overall model must be a sklearn Pipeline with named_steps."
-        )
-
-    if "scaler" not in model.named_steps:
-        raise KeyError("Pipeline is missing 'scaler' step.")
-
-    if "linear_regression" not in model.named_steps:
-        raise KeyError("Pipeline is missing 'linear_regression' step.")
-
-    scaler = model.named_steps["scaler"]
-    linear_model = model.named_steps["linear_regression"]
-
-    X_scaled = scaler.transform(X_overall)
-
-    coefficients = linear_model.coef_
-    intercept = float(linear_model.intercept_)
-
-    if len(coefficients) != X_overall.shape[1]:
-        raise ValueError(
-            "Number of coefficients does not match number of features."
-        )
-
-    row_scaled = X_scaled[0]
-    row_contributions = coefficients * row_scaled
-
     result = {
-        "base_value": round(intercept, 4),
-        "prediction_raw": round(float(prediction_raw), 4),
-        "prediction": round(float(prediction_rounded), 1),
+        "base_value": 0.0,
+        "prediction_raw": round(float(overall_raw), 4),
+        "prediction": round(float(overall_rounded), 1),
         "features": [],
     }
 
-    for feature_name, feature_value, contribution in zip(
-        X_overall.columns,
-        X_overall.iloc[0].values,
-        row_contributions,
-    ):
+    for target_name in [
+        "fluency",
+        "lexical",
+        "pronunciation",
+        "grammar",
+    ]:
+        score = float(component_scores[target_name])
+        contribution = score / 4
+
         result["features"].append(
             {
-                "feature": feature_name,
-                "feature_value": round(float(feature_value), 4),
-                "shap_value": round(float(contribution), 4),
+                "feature": f"{target_name}_score",
+                "feature_value": round(score, 4),
+                "shap_value": round(contribution, 4),
+                "impact": "increase" if contribution >= 0 else "decrease",
+            }
+        )
+
+    result["features"] = sorted(
+        result["features"],
+        key=lambda item: abs(item["shap_value"]),
+        reverse=True,
+    )
+
+    return result
+
+
+# ============================================
+# MAIN SERVICE FUNCTION
+# ============================================
+
+# ============================================
+# OVERALL AVERAGE EXPLANATION
+# ============================================
+
+def _make_overall_average_shap_dict(
+    component_scores: Dict[str, float],
+    overall_raw: float,
+    overall_rounded: float,
+) -> dict:
+    """
+    Create explanation for overall score.
+
+    Overall is no longer predicted by a Linear Regression model.
+
+    Formula:
+        overall = (
+            fluency_score
+            + lexical_score
+            + pronunciation_score
+            + grammar_score
+        ) / 4
+
+    To keep the old frontend structure, this function returns a SHAP-like dict.
+    Each component contributes score / 4 to the final overall score.
+    """
+
+    result = {
+        "base_value": 0.0,
+        "prediction_raw": round(float(overall_raw), 4),
+        "prediction": round(float(overall_rounded), 1),
+        "features": [],
+    }
+
+    for target_name in [
+        "fluency",
+        "lexical",
+        "pronunciation",
+        "grammar",
+    ]:
+        score = float(component_scores[target_name])
+        contribution = score / 4
+
+        result["features"].append(
+            {
+                "feature": f"{target_name}_score",
+                "feature_value": round(score, 4),
+                "shap_value": round(contribution, 4),
                 "impact": "increase" if contribution >= 0 else "decrease",
             }
         )
@@ -433,12 +483,13 @@ def predict_scores_with_shap_from_features(
     grammar_data: Optional[Dict[str, Any]] = None,
 ) -> dict:
     """
-    Predict scores and compute overall local explanation.
+    Predict 4 component scores and calculate overall score.
 
     Rules:
-    1. Build all features once.
-    2. Predict each model using feature_columns_by_model.json.
-    3. Explain only the overall model using feature_columns.json.
+    1. Predict fluency, lexical, pronunciation, grammar by 4 separate models.
+    2. Overall is NOT predicted by model.
+    3. Overall = (fluency + lexical + pronunciation + grammar) / 4.
+    4. Overall is rounded to nearest 0.5 band.
     """
 
     X_all = build_score_features(
@@ -455,11 +506,12 @@ def predict_scores_with_shap_from_features(
         "shap": {},
     }
 
-    overall_prediction_raw = None
-    overall_prediction_rounded = None
+    component_scores = {}
+    component_raw_scores = {}
 
+    # Chỉ predict 4 model thành phần.
+    # Không predict overall model nữa.
     for target_name in [
-        "overall",
         "fluency",
         "lexical",
         "pronunciation",
@@ -480,6 +532,9 @@ def predict_scores_with_shap_from_features(
         prediction_clipped = clip_score(prediction_raw)
         prediction_rounded = round_half(prediction_clipped)
 
+        component_raw_scores[target_name] = prediction_clipped
+        component_scores[target_name] = prediction_rounded
+
         output["scores"][f"{target_name}_score"] = round(
             float(prediction_rounded),
             1,
@@ -490,18 +545,38 @@ def predict_scores_with_shap_from_features(
             4,
         )
 
-        if target_name == "overall":
-            overall_prediction_raw = prediction_raw
-            overall_prediction_rounded = prediction_rounded
+    # ============================================
+    # CALCULATE OVERALL SCORE
+    # ============================================
 
-    overall_model = load_score_model("overall")
-    X_overall = select_features_for_overall_explanation(X_all)
+    overall_raw = (
+        component_scores["fluency"]
+        + component_scores["lexical"]
+        + component_scores["pronunciation"]
+        + component_scores["grammar"]
+    ) / 4
 
-    output["shap"]["overall"] = _make_overall_local_shap_dict(
-        model=overall_model,
-        X_overall=X_overall,
-        prediction_raw=overall_prediction_raw,
-        prediction_rounded=overall_prediction_rounded,
+    overall_clipped = clip_score(overall_raw)
+    overall_rounded = round_half(overall_clipped)
+
+    output["scores"]["overall_score"] = round(
+        float(overall_rounded),
+        1,
+    )
+
+    output["raw_scores"]["overall_score"] = round(
+        float(overall_clipped),
+        4,
+    )
+
+    # ============================================
+    # OVERALL EXPLANATION
+    # ============================================
+
+    output["shap"]["overall"] = _make_overall_average_shap_dict(
+        component_scores=component_scores,
+        overall_raw=overall_raw,
+        overall_rounded=overall_rounded,
     )
 
     return output

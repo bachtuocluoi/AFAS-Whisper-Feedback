@@ -1,5 +1,6 @@
 {
-    "model_type": "linear_regression_with_standard_scaler",
+    "model_type": "LinearRegression",
+    "pipeline": "StandardScaler + LinearRegression",
     "n_splits": 5,
     "random_state": 42,
     "features": [
@@ -17,9 +18,9 @@
         "pro_70%-85%",
         "pro_85%-95%",
         "pro_95%-100%",
-        "gra_ratio_error_sentences",
-        "gra_total_errors",
-        "gra_error_rate"
+        "gram_ratio_error",
+        "gram_total_errors",
+        "gram_error_rate"
     ],
     "features_by_model": {
         "fluency": [
@@ -43,9 +44,9 @@
             "pro_95%-100%"
         ],
         "grammar": [
-            "gra_ratio_error_sentences",
-            "gra_total_errors",
-            "gra_error_rate"
+            "gram_ratio_error",
+            "gram_total_errors",
+            "gram_error_rate"
         ],
         "overall": [
             "flu_speech_rate",
@@ -62,9 +63,9 @@
             "pro_70%-85%",
             "pro_85%-95%",
             "pro_95%-100%",
-            "gra_ratio_error_sentences",
-            "gra_total_errors",
-            "gra_error_rate"
+            "gram_ratio_error",
+            "gram_total_errors",
+            "gram_error_rate"
         ]
     },
     "targets": {
@@ -85,13 +86,14 @@
         "feature_columns": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_columns.json",
         "feature_columns_by_model": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_columns_by_model.json",
         "feature_medians": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_medians.json",
-        "linear_background_data": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\linear_background_data.csv"
+        "background_data": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\linear_regression_background_data.csv"
     },
     "saved_output_files": {
         "metrics": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_cv_metrics_all_targets.csv",
         "predictions_long": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_predictions_long_all_targets.csv",
         "predictions_wide": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_predictions_wide_all_targets.csv",
-        "final_coefficients": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_final_coefficients_all_targets.csv",
-        "overall_coefficient_plot": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\overall_linear_coefficients_final.png"
+        "cv_coefficients": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_coefficients_cv.csv",
+        "coefficient_summary": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_coefficients_summary.csv",
+        "final_coefficients": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_coefficients_final.csv"
     }
 }

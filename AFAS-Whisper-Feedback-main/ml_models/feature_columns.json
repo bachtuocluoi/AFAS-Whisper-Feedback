@@ -13,7 +13,7 @@
     "pro_70%-85%",
     "pro_85%-95%",
     "pro_95%-100%",
-    "gra_ratio_error_sentences",
-    "gra_total_errors",
-    "gra_error_rate"
+    "gram_ratio_error",
+    "gram_total_errors",
+    "gram_error_rate"
 ]
