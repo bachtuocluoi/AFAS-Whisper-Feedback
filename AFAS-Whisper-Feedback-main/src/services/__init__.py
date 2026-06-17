@@ -7,6 +7,7 @@ from src.services.fluency_service import compute_fluency_metrics
 from src.services.pronunciation_service import compute_pronunciation_metrics
 from src.services.lexical_diversity_service import compute_lexical_diversity_metrics
 from src.services.lexical_cefr_service import compute_lexical_cefr_metrics
+from src.services.grammar_service import compute_grammar_metrics
 
 __all__ = [
     "ASRService",
@@ -15,5 +16,6 @@ __all__ = [
     "compute_pronunciation_metrics",
     "compute_lexical_diversity_metrics",
     "compute_lexical_cefr_metrics",
+    "compute_grammar_metrics"
 ]
 

@@ -14,6 +14,7 @@ class FeedbackBase(BaseModel):
     fluency_id: Optional[int] = None
     lexical_id: Optional[int] = None
     pronunciation_id: Optional[int] = None
+    grammar_id: Optional[int] = None
 
 
 class FeedbackCreate(FeedbackBase):

@@ -24,6 +24,7 @@ class ScoreBase(BaseModel):
     fluency_score: Optional[float] = None
     lexical_score: Optional[float] = None
     pronunciation_score: Optional[float] = None
+    grammar_score: Optional[float] = None
     overall_score: Optional[float] = None
     shap_values: Optional[str] = None
 

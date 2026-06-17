@@ -11,6 +11,7 @@ from src.services.pronunciation_service import compute_pronunciation_metrics
 from src.services.lexical_cefr_service import compute_lexical_cefr_metrics
 from src.services.lexical_diversity_service import compute_lexical_diversity_metrics
 from src.services.feedback_service import generate_feedback
+from src.services.grammar_service import compute_grammar_metrics
 
 from src.api.dependencies import db_dependency
 from src.core import models
@@ -177,8 +178,32 @@ def submit_audio(
             status_code=500,
             detail=f"Failed to save pronunciation: {str(e)}"
         )
+    
+    #8. Tính grammar
+    try:
+        grammar_data = compute_grammar_metrics(result)
 
-    # 8. Tạo và lưu feedback
+        db_grammar = models.Grammar(
+            submit_id=db_submit.id,
+            ratio_error_sentences=grammar_data["ratio_error_sentences"],
+            total_errors=grammar_data["total_errors"],
+            error_rate=grammar_data["error_rate"]
+        )
+
+        db.add(db_grammar)
+        db_submit.progress = 85
+        db.commit()
+        db.refresh(db_grammar)
+
+    except Exception as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save grammar: {str(e)}"
+        )
+
+    # 9. Tạo và lưu feedback
     try:
         features = {
             "speech_rate": fluency_data["speech_rate"],
@@ -195,7 +220,10 @@ def submit_audio(
             "score_70_85": pronunciation_data["score_70_85"],
             "score_85_95": pronunciation_data["score_85_95"],
             "score_95_100": pronunciation_data["score_95_100"],
-            "pronunciation": pronunciation_data["pronunciation_score"]
+            "pronunciation": pronunciation_data["pronunciation_score"],
+            "grammar_error_rate": grammar_data["error_rate"],
+            "grammar_total_errors": grammar_data["total_errors"],
+            "grammar_ratio_error_sentences": grammar_data["ratio_error_sentences"]
         }
 
 
@@ -207,6 +235,7 @@ def submit_audio(
             f"Lexical diversity: {feedback_result['lexical_diversity']}"
             f"Lexical level: {feedback_result['lexical_level']}"
             f"Pronunciation: {feedback_result['pronunciation']}"
+            f"Grammar: {feedback_result['grammar']}"
         )
 
         db_feedback = models.Feedback(
@@ -227,7 +256,7 @@ def submit_audio(
         )
     
 
-    # 9. Predict score and compute SHAP for this submission
+    # 10. Predict score and compute SHAP for this submission
     try:
         score_result = predict_scores_with_shap_from_features(
             fluency_data=fluency_data,
@@ -245,6 +274,7 @@ def submit_audio(
             fluency_score=score_data["fluency_score"],
             lexical_score=score_data["lexical_score"],
             pronunciation_score=score_data["pronunciation_score"],
+            grammar_score=score_data["grammar_score"], 
             overall_score=score_data["overall_score"],
             shap_values=json.dumps(shap_data, ensure_ascii=False)
         )

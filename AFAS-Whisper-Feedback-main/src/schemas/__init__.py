@@ -10,6 +10,7 @@ from src.schemas.transcript import TranscriptBase, TranscriptCreate, TranscriptR
 from src.schemas.fluency import FluencyBase, FluencyCreate, FluencyResponse
 from src.schemas.lexical import LexicalBase, LexicalCreate, LexicalResponse
 from src.schemas.pronunciation import PronunciationBase, PronunciationCreate, PronunciationResponse
+from src.schemas.grammar import GrammarBase, GrammarCreate, GrammarResponse
 from src.schemas.feedback import FeedbackBase, FeedbackCreate, FeedbackResponse
 from src.schemas.score import ScoreBase, ScoreCreate, ScoreResponse
 
@@ -29,6 +30,9 @@ __all__ = [
     "PronunciationBase",
     "PronunciationCreate",
     "PronunciationResponse",
+    "GrammarBase",
+    "GrammarCreate",
+    "GrammarResponse",
     "FeedbackBase",
     "FeedbackCreate",
     "FeedbackResponse",
