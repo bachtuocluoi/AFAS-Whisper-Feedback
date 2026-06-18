@@ -13,9 +13,19 @@ from src.api.routes import api_router
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
+from contextlib import asynccontextmanager
+from src.create_queue import asr_queue
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await asr_queue.start()
+    yield
+    await asr_queue.stop()
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -47,6 +57,7 @@ app = FastAPI(
     license_info={
         "name": "MIT",
     },
+    lifespan=lifespan,
 )
 
 # Configure CORS

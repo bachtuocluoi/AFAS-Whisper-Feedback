@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from encodings.punycode import T
+from typing import Optional
 from passlib.context import CryptContext
 from authlib.jose import jwt
 from authlib.jose.errors import BadSignatureError
 from config.settings import settings
+import secrets
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -18,7 +21,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(user_id: int, username: str) -> str:
     now = datetime.now(timezone.utc)
     exp = now + timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_SECONDS)
-
+    
     header = {"alg": settings.JWT_ALG}
     payload = {
         "sub": str(user_id),      # subject = user_id
@@ -30,6 +33,24 @@ def create_access_token(user_id: int, username: str) -> str:
     token = jwt.encode(header, payload, settings.SECRET_KEY)
     return token.decode("utf-8")
 
+def create_refresh_token(user_id: int, username:str, session_id: Optional[str] = None, count: int = 1) -> str:
+    now = datetime.now(timezone.utc)
+    exp = now + timedelta(seconds=settings.REFRESH_TOKEN_EXPIRE_SECONDS)
+
+    if session_id is None:
+        session_id = secrets.token_hex(16)
+    header = {"alg": settings.JWT_ALG}
+    payload = {
+        "sub": str(user_id),      # subject = user_id
+        "username": username,
+        "session_id": str(session_id),
+        "count": int(count),
+        "iat": int(now.timestamp()),
+        "exp": int(exp.timestamp())
+    }
+
+    token = jwt.encode(header, payload, settings.SECRET_KEY)
+    return token.decode("utf-8")
 
 def decode_access_token(token: str) -> dict:
     try:
@@ -40,3 +61,6 @@ def decode_access_token(token: str) -> dict:
         raise ValueError("Invalid token signature")
     except Exception:
         raise ValueError("Invalid or expired token")
+
+def decode_refresh_token(token: str) -> dict:
+    return dict(jwt.decode(token, settings.SECRET_KEY))

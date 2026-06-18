@@ -16,15 +16,15 @@ from src.services.grammar_service import compute_grammar_metrics
 from src.api.dependencies import db_dependency
 from src.core import models
 from src.schemas.submit import SubmitCreate, SubmitResponse
-from src.services.asr_service import get_asr_service
 from src.auth.get_user import get_current_user, check_submit_owned_user
 from src.services.score_service import predict_scores_with_shap_from_features
+from src.create_queue import asr_queue
 
 router = APIRouter(prefix="/submit", tags=["submit"], dependencies=[Depends(get_current_user)])
 
 
 @router.post("/", response_model=SubmitResponse, status_code=201)
-def submit_audio(
+async def submit_audio(
     submit: SubmitCreate,
     db: db_dependency,
     user: models.User = Depends(get_current_user)
@@ -62,11 +62,12 @@ def submit_audio(
 
     # 3. Chạy ASR Whisper
     try:
-        asr_service = get_asr_service()
-        result = asr_service.transcribe(
-            submit.audio_path,
-            word_timestamps=True
-        )
+        # asr_service = get_asr_service()
+        # result = asr_service.transcribe(
+        #     submit.audio_path,
+        #     word_timestamps=True
+        # )
+        result = await asr_queue.submit(submit.audio_path)
     except Exception as e:
         raise HTTPException(
             status_code=500,

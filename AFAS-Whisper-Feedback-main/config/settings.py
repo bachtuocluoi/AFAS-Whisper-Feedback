@@ -39,10 +39,10 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
         
-    SECRET_KEY: str
+    SECRET_KEY: str 
     JWT_ALG: str
-    ACCESS_TOKEN_EXPIRE_SECONDS: int 
-
+    ACCESS_TOKEN_EXPIRE_SECONDS: int
+    REFRESH_TOKEN_EXPIRE_SECONDS: int
 
 # Global settings instance
 settings = Settings()

@@ -2,6 +2,17 @@ const BACKEND_BASE_URL =
     window.APP_CONFIG?.BACKEND_BASE_URL || "http://127.0.0.1:8100";
 
 const token = localStorage.getItem("access_token");
+const refresh_token = localStorage.getItem("refresh_token");
+
+function parseJwt(token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+}
 
 function loadUser() {
     if (!token) {
@@ -9,11 +20,9 @@ function loadUser() {
         window.location.href = "/view/login.html";
         return;
     }
-    //if(jwtDecode(token).exp < Date.now() / 1000) {
-    //alert("Session expired");
-    //localStorage.removeItem("access_token");
-    //window.location.href = "/view/login.html";
-    //}
+    if (parseJwt(token).exp < Date.now() / 1000) {
+        handleUnauthorized();
+    }
     return token;
 }
 
@@ -22,8 +31,37 @@ function handleUnauthorized() {
 
     localStorage.removeItem("access_token");
     localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
     localStorage.removeItem("submit_id");
 
     window.location.href = "/view/login.html";
+}
+
+async function getRefreshToken() {
+    if (!refresh_token) {
+        handleUnauthorized();
+    }
+    try {
+        const response = await fetch(BACKEND_BASE_URL + "/api/v1/auth/refresh", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                refresh_token: refresh_token,
+            })
+        });
+
+        const data = await response.json();
+
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+
+        token = data.access_token;
+        refresh_token = data.refresh_token;
+    } catch (error) {
+        handleUnauthorized();
+        console.error(error);
+    }
 }
 
