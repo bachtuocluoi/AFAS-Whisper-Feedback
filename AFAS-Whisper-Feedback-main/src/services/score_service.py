@@ -1,29 +1,21 @@
 """
-Score prediction service using Linear Regression models.
+Score prediction service using 4 Linear Regression PKL models.
 
-This service predicts speaking scores from extracted features and generates
-local explanation values for the OVERALL linear regression model.
+Models:
+1. fluency_score_model_linear.pkl
+2. lexical_score_model_linear.pkl
+3. pronunciation_score_model_linear.pkl
+4. overall_score_model_linear.pkl
 
-Important rule:
-- Prediction:
-    Each model uses feature_columns_by_model.json.
-- Explanation:
-    Only the overall model is explained, using feature_columns.json.
+Important rules:
+- Fluency, lexical, pronunciation, overall are predicted by 4 separate models.
+- Grammar is NOT predicted by a model.
+- Grammar is calculated by:
 
-For Linear Regression with StandardScaler:
-    local contribution = coefficient * standardized_feature_value
+    grammar = overall * 4 - fluency - lexical - pronunciation
 
-This keeps the same output structure as SHAP:
-{
-    "shap": {
-        "overall": {
-            "base_value": ...,
-            "prediction_raw": ...,
-            "prediction": ...,
-            "features": [...]
-        }
-    }
-}
+- Speech rate is used as WORDS PER MINUTE.
+  Do NOT divide speech_rate by 60.
 """
 
 import json
@@ -32,6 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import joblib
+import numpy as np
 import pandas as pd
 
 
@@ -41,12 +34,19 @@ import pandas as pd
 
 def round_half(score: float) -> float:
     """
-    Round score to IELTS-like 0.5 band using half-up rule.
+    Round score to nearest 0.5 band.
     """
     score = float(score)
     score = max(0.0, min(9.0, score))
 
     return math.floor(score * 2 + 0.5 + 1e-12) / 2
+
+
+def clip_score(score: float) -> float:
+    """
+    Clip predicted score to 0-9.
+    """
+    return max(0.0, min(9.0, float(score)))
 
 
 # ============================================
@@ -57,7 +57,6 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 MODEL_DIR = BASE_DIR / "ml_models"
 
-FEATURE_COLUMNS_PATH = MODEL_DIR / "feature_columns.json"
 FEATURE_COLUMNS_BY_MODEL_PATH = MODEL_DIR / "feature_columns_by_model.json"
 FEATURE_MEDIANS_PATH = MODEL_DIR / "feature_medians.json"
 
@@ -66,7 +65,6 @@ MODEL_PATHS = {
     "fluency": MODEL_DIR / "fluency_score_model_linear.pkl",
     "lexical": MODEL_DIR / "lexical_score_model_linear.pkl",
     "pronunciation": MODEL_DIR / "pronunciation_score_model_linear.pkl",
-    "grammar": MODEL_DIR / "grammar_score_model_linear.pkl",
 }
 
 
@@ -102,41 +100,19 @@ def _load_json(path: Path) -> Any:
     return data
 
 
-def load_overall_feature_columns() -> List[str]:
-    """
-    Load feature_columns.json.
-
-    This file must be a list because it is used as:
-        X[overall_feature_columns]
-
-    It is used for:
-    - building the full feature input
-    - overall explanation
-    """
-    feature_columns = _load_json(FEATURE_COLUMNS_PATH)
-
-    if not isinstance(feature_columns, list):
-        raise TypeError(
-            "feature_columns.json must be a list of feature names."
-        )
-
-    return feature_columns
-
-
 def load_features_by_model() -> Dict[str, List[str]]:
     """
     Load feature_columns_by_model.json.
 
-    This file must contain feature lists for component models:
+    Required keys:
     {
         "fluency": [...],
         "lexical": [...],
         "pronunciation": [...],
-        "grammar": [...]
+        "overall": [...]
     }
 
-    Overall score is NOT predicted by a model anymore.
-    Overall = (fluency + lexical + pronunciation + grammar) / 4
+    Grammar is not required because grammar has no model.
     """
     features_by_model = _load_json(FEATURE_COLUMNS_BY_MODEL_PATH)
 
@@ -149,7 +125,7 @@ def load_features_by_model() -> Dict[str, List[str]]:
         "fluency",
         "lexical",
         "pronunciation",
-        "grammar",
+        "overall",
     ]
 
     for target_name in required_targets:
@@ -167,15 +143,23 @@ def load_features_by_model() -> Dict[str, List[str]]:
     return features_by_model
 
 
+def load_feature_medians() -> Dict[str, float]:
+    """
+    Load feature medians generated during training.
+    """
+    feature_medians = _load_json(FEATURE_MEDIANS_PATH)
+
+    if not isinstance(feature_medians, dict):
+        raise TypeError(
+            "feature_medians.json must be a dictionary."
+        )
+
+    return feature_medians
+
+
 def _load_model(model_path: Path) -> Any:
     """
-    Load a Linear Regression pipeline from disk.
-
-    Expected model format:
-        Pipeline([
-            ("scaler", StandardScaler()),
-            ("linear_regression", LinearRegression())
-        ])
+    Load pkl model.
     """
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found: {model_path}")
@@ -185,7 +169,7 @@ def _load_model(model_path: Path) -> Any:
 
 def load_score_model(target_name: str) -> Any:
     """
-    Load and cache a Linear Regression model by target name.
+    Load and cache model by target name.
     """
     if target_name in _MODEL_CACHE:
         return _MODEL_CACHE[target_name]
@@ -194,9 +178,56 @@ def load_score_model(target_name: str) -> Any:
         raise ValueError(f"Unknown target name: {target_name}")
 
     model = _load_model(MODEL_PATHS[target_name])
+
     _MODEL_CACHE[target_name] = model
 
     return model
+
+
+def get_all_feature_columns() -> List[str]:
+    """
+    Get union of all features used by the 4 models.
+    """
+    features_by_model = load_features_by_model()
+
+    all_features = []
+
+    for target_name in [
+        "fluency",
+        "lexical",
+        "pronunciation",
+        "overall",
+    ]:
+        for feature in features_by_model[target_name]:
+            if feature not in all_features:
+                all_features.append(feature)
+
+    return all_features
+
+
+# ============================================
+# VALUE HELPERS
+# ============================================
+
+def get_value(
+    data: Optional[Dict[str, Any]],
+    keys: List[str],
+    default: float = 0.0,
+) -> float:
+    """
+    Get value from dict using multiple possible key names.
+    """
+    if data is None:
+        return default
+
+    for key in keys:
+        if key in data and data[key] is not None:
+            try:
+                return float(data[key])
+            except Exception:
+                return default
+
+    return default
 
 
 # ============================================
@@ -208,61 +239,271 @@ def build_score_features(
     lexical_cefr: Dict[str, Any],
     lexical_diversity: Dict[str, Any],
     pronunciation_data: Dict[str, Any],
-    grammar_data: Optional[Dict[str, Any]] = None,
+    grammar_data: Dict[str, Any],
 ) -> pd.DataFrame:
     """
-    Build one-row DataFrame containing all overall features.
+    Build one-row DataFrame containing all features needed by 4 models.
 
-    Later:
-    - each score model selects its own columns from feature_columns_by_model.json
-    - explanation selects overall columns from feature_columns.json
+    grammar_data is kept only for compatibility with old backend calls.
+    It is not used because grammar has no model.
     """
 
-    if grammar_data is None:
-        grammar_data = {}
+    all_feature_columns = get_all_feature_columns()
+    feature_medians = load_feature_medians()
 
-    overall_feature_columns = load_overall_feature_columns()
-    feature_medians = _load_json(FEATURE_MEDIANS_PATH)
+    # ============================================
+    # FLUENCY
+    # IMPORTANT:
+    # speech rate is WORDS PER MINUTE.
+    # Do NOT divide by 60.
+    # ============================================
+
+    raw_speech_rate = get_value(
+    fluency_data,
+    [
+        "speech_rate_wps",
+        "flu_speech_rate",
+        "speech_rate",
+        "speed_rate",
+    ],
+)
+
+    if raw_speech_rate > 20:
+        flu_speech_rate = raw_speech_rate / 60.0
+    else:
+        flu_speech_rate = raw_speech_rate
+
+    flu_pause_ratio = get_value(
+        fluency_data,
+        [
+            "pause_ratio",
+            "flu_pause_ratio",
+            "ratio_pauses_to_duration",
+        ],
+    )
+    # ============================================
+    # LEXICAL
+    # ============================================
+
+    lex_TTR = get_value(
+        lexical_diversity,
+        [
+            "lex_TTR",
+            "TTR",
+            "ttr",
+        ],
+    )
+
+    lex_MSTTR = get_value(
+        lexical_diversity,
+        [
+            "lex_MSTTR",
+            "MSTTR",
+            "msttr",
+        ],
+    )
+
+    lex_A1 = get_value(
+        lexical_cefr,
+        [
+            "lex_A1",
+            "A1",
+            "a1",
+        ],
+    )
+
+    lex_A2 = get_value(
+        lexical_cefr,
+        [
+            "lex_A2",
+            "A2",
+            "a2",
+        ],
+    )
+
+    lex_B1 = get_value(
+        lexical_cefr,
+        [
+            "lex_B1",
+            "B1",
+            "b1",
+        ],
+    )
+
+    lex_B2 = get_value(
+        lexical_cefr,
+        [
+            "lex_B2",
+            "B2",
+            "b2",
+        ],
+    )
+
+    lex_C1 = get_value(
+        lexical_cefr,
+        [
+            "lex_C1",
+            "C1",
+            "c1",
+        ],
+    )
+
+    lexical_advanced = (
+        lex_B1
+        + 2 * lex_B2
+        + 3 * lex_C1
+    )
+
+    # ============================================
+    # PRONUNCIATION
+    # ============================================
+
+    pro_0_50 = get_value(
+        pronunciation_data,
+        [
+            "pro_0_50",
+            "pro_0%-50%",
+            "0-50%",
+            "prob_0_50",
+            "score_0_50",
+            "score_0_50_percent",
+        ],
+    )
+
+    pro_50_70 = get_value(
+        pronunciation_data,
+        [
+            "pro_50_70",
+            "pro_50%-70%",
+            "50-70%",
+            "prob_50_70",
+            "score_50_70",
+            "score_50_70_percent",
+        ],
+    )
+
+    pro_70_85 = get_value(
+        pronunciation_data,
+        [
+            "pro_70_85",
+            "pro_70%-85%",
+            "70-85%",
+            "prob_70_85",
+            "score_70_85",
+            "score_70_85_percent",
+        ],
+    )
+
+    pro_85_95 = get_value(
+        pronunciation_data,
+        [
+            "pro_85_95",
+            "pro_85%-95%",
+            "85-95%",
+            "prob_85_95",
+            "score_85_95",
+            "score_85_95_percent",
+        ],
+    )
+
+    pro_95_100 = get_value(
+        pronunciation_data,
+        [
+            "pro_95_100",
+            "pro_95%-100%",
+            "95-100%",
+            "prob_95_100",
+            "score_95_100",
+            "score_95_100_percent",
+        ],
+    )
+
+    pron_bad = (
+        2 * pro_0_50
+        + pro_50_70
+    )
+
+    pron_good = (
+        pro_85_95
+        + 2 * pro_95_100
+    )
+
+    pron_neutral = pro_70_85
+
+    # ============================================
+    # FEATURE DICT
+    # Include both new names and old aliases.
+    # This prevents errors if JSON still uses old feature names.
+    # ============================================
 
     feature_dict = {
-        # Fluency
-        "flu_speech_rate": fluency_data.get("speech_rate", 0.0),
-        "flu_pause_ratio": fluency_data.get("pause_ratio", 0.0),
+        # Fluency new names
+        "flu_speech_rate": flu_speech_rate,
+        "flu_pause_ratio": flu_pause_ratio,
 
-        # Lexical diversity
-        "lex_TTR": lexical_diversity.get("ttr", 0.0),
-        "lex_MSTTR": lexical_diversity.get("msttr", 0.0),
+        # Lexical new names
+        "lex_TTR": lex_TTR,
+        "lex_MSTTR": lex_MSTTR,
+        "lex_A1": lex_A1,
+        "lex_A2": lex_A2,
+        "lex_B1": lex_B1,
+        "lex_B2": lex_B2,
+        "lex_C1": lex_C1,
+        "lexical_advanced": lexical_advanced,
 
-        # Lexical CEFR distribution
-        "lex_A1": lexical_cefr.get("a1", 0.0),
-        "lex_A2": lexical_cefr.get("a2", 0.0),
-        "lex_B1": lexical_cefr.get("b1", 0.0),
-        "lex_B2": lexical_cefr.get("b2", 0.0),
-        "lex_C1": lexical_cefr.get("c1", 0.0),
+        # Lexical aliases
+        "TTR": lex_TTR,
+        "MSTTR": lex_MSTTR,
+        "A1": lex_A1,
+        "A2": lex_A2,
+        "B1": lex_B1,
+        "B2": lex_B2,
+        "C1": lex_C1,
 
-        # Pronunciation confidence distribution
-        "pro_0%-50%": pronunciation_data.get("score_0_50", 0.0),
-        "pro_50%-70%": pronunciation_data.get("score_50_70", 0.0),
-        "pro_70%-85%": pronunciation_data.get("score_70_85", 0.0),
-        "pro_85%-95%": pronunciation_data.get("score_85_95", 0.0),
-        "pro_95%-100%": pronunciation_data.get("score_95_100", 0.0),
+        # Pronunciation raw names
+        "pro_0_50": pro_0_50,
+        "pro_50_70": pro_50_70,
+        "pro_70_85": pro_70_85,
+        "pro_85_95": pro_85_95,
+        "pro_95_100": pro_95_100,
 
-        # Grammar
-        "gra_ratio_error_sentences": grammar_data.get("ratio_error_sentences",0.0,),
-        "gra_total_errors": grammar_data.get("total_errors", 0.0),
-        "gra_error_rate": grammar_data.get("error_rate", 0.0),
+        # Pronunciation aliases with %
+        "pro_0%-50%": pro_0_50,
+        "pro_50%-70%": pro_50_70,
+        "pro_70%-85%": pro_70_85,
+        "pro_85%-95%": pro_85_95,
+        "pro_95%-100%": pro_95_100,
+
+        # Pronunciation aliases original column names
+        "0-50%": pro_0_50,
+        "50-70%": pro_50_70,
+        "70-85%": pro_70_85,
+        "85-95%": pro_85_95,
+        "95-100%": pro_95_100,
+
+        # Pronunciation engineered names
+        "pron_bad": pron_bad,
+        "pron_good": pron_good,
+        "pron_neutral": pron_neutral,
+
+        # Pronunciation old engineered aliases
+        "bad": pron_bad,
+        "good": pron_good,
+        "neutral": pron_neutral,
+        "neural": pron_neutral,
+        "pron_neural": pron_neutral,
     }
 
     X = pd.DataFrame([feature_dict])
 
-    for col in overall_feature_columns:
+    for col in all_feature_columns:
         if col not in X.columns:
             X[col] = feature_medians.get(col, 0.0)
 
         X[col] = pd.to_numeric(X[col], errors="coerce")
         X[col] = X[col].fillna(feature_medians.get(col, 0.0))
 
-    X = X[overall_feature_columns]
+    X = X[all_feature_columns]
 
     return X
 
@@ -272,9 +513,7 @@ def select_features_for_prediction(
     target_name: str,
 ) -> pd.DataFrame:
     """
-    Select correct feature columns for model prediction.
-
-    This uses feature_columns_by_model.json.
+    Select correct feature columns for one model.
     """
     features_by_model = load_features_by_model()
 
@@ -297,178 +536,271 @@ def select_features_for_prediction(
     return X_all[target_features]
 
 
-def select_features_for_overall_explanation(
-    X_all: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Select feature columns for overall explanation.
-
-    This uses feature_columns.json.
-    """
-    overall_feature_columns = load_overall_feature_columns()
-
-    missing_cols = [
-        col for col in overall_feature_columns
-        if col not in X_all.columns
-    ]
-
-    if missing_cols:
-        raise ValueError(
-            "Missing overall explanation feature columns: "
-            + ", ".join(missing_cols)
-        )
-
-    return X_all[overall_feature_columns]
-
-
 # ============================================
-# PREDICTION HELPERS
+# LINEAR MODEL EXPLANATION HELPERS
 # ============================================
 
-def clip_score(score: float) -> float:
+def _get_regressor_from_model(model: Any) -> Any:
     """
-    Clip predicted score to IELTS-like range 0-9.
+    Get LinearRegression object from Pipeline or direct model.
     """
-    return max(0.0, min(9.0, float(score)))
+    if hasattr(model, "named_steps"):
+        if "regressor" in model.named_steps:
+            return model.named_steps["regressor"]
+
+        if "linear_regression" in model.named_steps:
+            return model.named_steps["linear_regression"]
+
+        for _, step in reversed(model.steps):
+            if hasattr(step, "coef_") and hasattr(step, "intercept_"):
+                return step
+
+    if hasattr(model, "coef_") and hasattr(model, "intercept_"):
+        return model
+
+    raise ValueError(
+        "Cannot find LinearRegression regressor inside model."
+    )
 
 
-def _predict_raw_score(
+def _transform_X_for_contribution(
     model: Any,
     X: pd.DataFrame,
-) -> float:
+) -> np.ndarray:
     """
-    Predict raw score using loaded Linear Regression model.
+    If model has StandardScaler, use standardized values.
+    Otherwise use raw values.
     """
-    pred = model.predict(X)[0]
-    return float(pred)
+    if hasattr(model, "named_steps") and "scaler" in model.named_steps:
+        scaler = model.named_steps["scaler"]
+        return scaler.transform(X)
+
+    return X.values.astype(float)
 
 
-# ============================================
-# LINEAR EXPLANATION
-# ============================================
-
-# ============================================
-# OVERALL AVERAGE EXPLANATION
-# ============================================
-
-def _make_overall_average_shap_dict(
-    component_scores: Dict[str, float],
-    overall_raw: float,
-    overall_rounded: float,
-) -> dict:
+def make_linear_shap_dict(
+    target_name: str,
+    model: Any,
+    X: pd.DataFrame,
+    prediction_raw: float,
+    prediction_clipped: float,
+    prediction_rounded: float,
+) -> Dict[str, Any]:
     """
-    Create explanation for overall score.
+    SHAP-like explanation for Linear Regression.
 
-    Overall is no longer predicted by a Linear Regression model.
+    For StandardScaler + LinearRegression:
+        contribution = coefficient * standardized_feature_value
 
-    Formula:
-        overall = (
-            fluency_score
-            + lexical_score
-            + pronunciation_score
-            + grammar_score
-        ) / 4
-
-    To keep the old frontend structure, this function returns a SHAP-like dict.
-    Each component contributes score / 4 to the final overall score.
+    base_value = intercept
+    prediction_raw ≈ base_value + sum(contributions)
     """
+    regressor = _get_regressor_from_model(model)
 
-    result = {
-        "base_value": 0.0,
-        "prediction_raw": round(float(overall_raw), 4),
-        "prediction": round(float(overall_rounded), 1),
-        "features": [],
-    }
+    X_transformed = _transform_X_for_contribution(
+        model=model,
+        X=X,
+    )
 
-    for target_name in [
-        "fluency",
-        "lexical",
-        "pronunciation",
-        "grammar",
-    ]:
-        score = float(component_scores[target_name])
-        contribution = score / 4
+    coefficients = np.asarray(
+        regressor.coef_,
+        dtype=float,
+    ).ravel()
 
-        result["features"].append(
-            {
-                "feature": f"{target_name}_score",
-                "feature_value": round(score, 4),
-                "shap_value": round(contribution, 4),
-                "impact": "increase" if contribution >= 0 else "decrease",
-            }
-        )
+    intercept = float(regressor.intercept_)
 
-    result["features"] = sorted(
-        result["features"],
+    feature_names = list(X.columns)
+    feature_values = X.iloc[0].astype(float).values
+
+    contributions = coefficients * X_transformed[0]
+
+    features = []
+
+    for feature_name, feature_value, shap_value in zip(
+        feature_names,
+        feature_values,
+        contributions,
+    ):
+        shap_value = float(shap_value)
+
+        features.append({
+            "feature": feature_name,
+            "feature_value": round(float(feature_value), 4),
+            "shap_value": round(shap_value, 4),
+            "impact": "increase" if shap_value >= 0 else "decrease",
+        })
+
+    features = sorted(
+        features,
         key=lambda item: abs(item["shap_value"]),
         reverse=True,
     )
 
+    return {
+        "target": target_name,
+        "base_value": round(intercept, 4),
+        "prediction_raw": round(float(prediction_raw), 4),
+        "prediction_clipped": round(float(prediction_clipped), 4),
+        "prediction": round(float(prediction_rounded), 1),
+        "features": features,
+    }
+
+
+# ============================================
+# GRAMMAR EXPLANATION HELPERS
+# ============================================
+
+def _features_to_contribution_map(
+    shap_dict: Dict[str, Any],
+    multiplier: float = 1.0,
+) -> Dict[str, Dict[str, float]]:
+    """
+    Convert SHAP-like feature list to dict.
+    Used for grammar formula.
+    """
+    result = {}
+
+    for item in shap_dict["features"]:
+        feature_name = item["feature"]
+
+        result[feature_name] = {
+            "feature_value": float(item["feature_value"]),
+            "shap_value": float(item["shap_value"]) * multiplier,
+        }
+
     return result
 
 
-# ============================================
-# MAIN SERVICE FUNCTION
-# ============================================
-
-# ============================================
-# OVERALL AVERAGE EXPLANATION
-# ============================================
-
-def _make_overall_average_shap_dict(
-    component_scores: Dict[str, float],
-    overall_raw: float,
-    overall_rounded: float,
-) -> dict:
+def make_formula_grammar_shap_dict(
+    shap_by_model: Dict[str, Dict[str, Any]],
+    grammar_raw_unclipped: float,
+    grammar_clipped: float,
+    grammar_rounded: float,
+) -> Dict[str, Any]:
     """
-    Create explanation for overall score.
+    SHAP-like explanation for grammar formula.
 
-    Overall is no longer predicted by a Linear Regression model.
-
-    Formula:
-        overall = (
-            fluency_score
-            + lexical_score
-            + pronunciation_score
-            + grammar_score
-        ) / 4
-
-    To keep the old frontend structure, this function returns a SHAP-like dict.
-    Each component contributes score / 4 to the final overall score.
+    grammar = overall*4 - fluency - lexical - pronunciation
     """
+    base_value = (
+        shap_by_model["overall"]["base_value"] * 4
+        - shap_by_model["fluency"]["base_value"]
+        - shap_by_model["lexical"]["base_value"]
+        - shap_by_model["pronunciation"]["base_value"]
+    )
 
-    result = {
-        "base_value": 0.0,
-        "prediction_raw": round(float(overall_raw), 4),
-        "prediction": round(float(overall_rounded), 1),
-        "features": [],
-    }
+    contribution_maps = [
+        _features_to_contribution_map(
+            shap_by_model["overall"],
+            multiplier=4.0,
+        ),
+        _features_to_contribution_map(
+            shap_by_model["fluency"],
+            multiplier=-1.0,
+        ),
+        _features_to_contribution_map(
+            shap_by_model["lexical"],
+            multiplier=-1.0,
+        ),
+        _features_to_contribution_map(
+            shap_by_model["pronunciation"],
+            multiplier=-1.0,
+        ),
+    ]
 
-    for target_name in [
-        "fluency",
-        "lexical",
-        "pronunciation",
-        "grammar",
-    ]:
-        score = float(component_scores[target_name])
-        contribution = score / 4
+    combined = {}
 
-        result["features"].append(
-            {
-                "feature": f"{target_name}_score",
-                "feature_value": round(score, 4),
-                "shap_value": round(contribution, 4),
-                "impact": "increase" if contribution >= 0 else "decrease",
-            }
-        )
+    for contribution_map in contribution_maps:
+        for feature_name, values in contribution_map.items():
+            if feature_name not in combined:
+                combined[feature_name] = {
+                    "feature_value": values["feature_value"],
+                    "shap_value": 0.0,
+                }
 
-    result["features"] = sorted(
-        result["features"],
+            combined[feature_name]["shap_value"] += values["shap_value"]
+
+    features = []
+
+    for feature_name, values in combined.items():
+        shap_value = float(values["shap_value"])
+
+        features.append({
+            "feature": feature_name,
+            "feature_value": round(float(values["feature_value"]), 4),
+            "shap_value": round(shap_value, 4),
+            "impact": "increase" if shap_value >= 0 else "decrease",
+        })
+
+    features = sorted(
+        features,
         key=lambda item: abs(item["shap_value"]),
         reverse=True,
     )
 
-    return result
+    return {
+        "target": "grammar",
+        "base_value": round(float(base_value), 4),
+        "prediction_raw": round(float(grammar_raw_unclipped), 4),
+        "prediction_clipped": round(float(grammar_clipped), 4),
+        "prediction": round(float(grammar_rounded), 1),
+        "formula": "overall*4 - fluency - lexical - pronunciation",
+        "features": features,
+    }
+
+
+def make_grammar_components_shap_dict(
+    clipped_scores: Dict[str, float],
+    grammar_raw_unclipped: float,
+    grammar_clipped: float,
+    grammar_rounded: float,
+) -> Dict[str, Any]:
+    """
+    Simple explanation for grammar by component scores.
+    Useful for frontend.
+    """
+    features = [
+        {
+            "feature": "overall_score * 4",
+            "feature_value": round(float(clipped_scores["overall"]), 4),
+            "shap_value": round(float(clipped_scores["overall"] * 4), 4),
+            "impact": "increase",
+        },
+        {
+            "feature": "- fluency_score",
+            "feature_value": round(float(clipped_scores["fluency"]), 4),
+            "shap_value": round(float(-clipped_scores["fluency"]), 4),
+            "impact": "decrease",
+        },
+        {
+            "feature": "- lexical_score",
+            "feature_value": round(float(clipped_scores["lexical"]), 4),
+            "shap_value": round(float(-clipped_scores["lexical"]), 4),
+            "impact": "decrease",
+        },
+        {
+            "feature": "- pronunciation_score",
+            "feature_value": round(float(clipped_scores["pronunciation"]), 4),
+            "shap_value": round(float(-clipped_scores["pronunciation"]), 4),
+            "impact": "decrease",
+        },
+    ]
+
+    features = sorted(
+        features,
+        key=lambda item: abs(item["shap_value"]),
+        reverse=True,
+    )
+
+    return {
+        "target": "grammar_components",
+        "base_value": 0.0,
+        "prediction_raw": round(float(grammar_raw_unclipped), 4),
+        "prediction_clipped": round(float(grammar_clipped), 4),
+        "prediction": round(float(grammar_rounded), 1),
+        "formula": "overall*4 - fluency - lexical - pronunciation",
+        "features": features,
+    }
 
 
 # ============================================
@@ -483,13 +815,14 @@ def predict_scores_with_shap_from_features(
     grammar_data: Optional[Dict[str, Any]] = None,
 ) -> dict:
     """
-    Predict 4 component scores and calculate overall score.
+    Predict scores using 4 PKL models.
 
     Rules:
-    1. Predict fluency, lexical, pronunciation, grammar by 4 separate models.
-    2. Overall is NOT predicted by model.
-    3. Overall = (fluency + lexical + pronunciation + grammar) / 4.
-    4. Overall is rounded to nearest 0.5 band.
+    1. fluency = fluency model
+    2. lexical = lexical model
+    3. pronunciation = pronunciation model
+    4. overall = overall model
+    5. grammar = overall*4 - fluency - lexical - pronunciation
     """
 
     X_all = build_score_features(
@@ -503,19 +836,25 @@ def predict_scores_with_shap_from_features(
     output = {
         "scores": {},
         "raw_scores": {},
+        "model_raw_scores": {},
         "shap": {},
+        "features": X_all.to_dict(orient="records")[0],
     }
 
-    component_scores = {}
-    component_raw_scores = {}
+    raw_scores = {}
+    clipped_scores = {}
+    rounded_scores = {}
+    shap_by_model = {}
 
-    # Chỉ predict 4 model thành phần.
-    # Không predict overall model nữa.
+    # ============================================
+    # PREDICT 4 MODELS
+    # ============================================
+
     for target_name in [
         "fluency",
         "lexical",
         "pronunciation",
-        "grammar",
+        "overall",
     ]:
         model = load_score_model(target_name)
 
@@ -524,16 +863,22 @@ def predict_scores_with_shap_from_features(
             target_name=target_name,
         )
 
-        prediction_raw = _predict_raw_score(
-            model=model,
-            X=X_target,
-        )
+        if target_name == "fluency":
+            print("\n===== DEBUG FLUENCY =====")
+            print("fluency_data:", fluency_data)
+            print("X_target:")
+            print(X_target)
 
+        prediction_raw = float(model.predict(X_target)[0])
+
+        if target_name == "fluency":
+            print("fluency raw prediction:", prediction_raw)
         prediction_clipped = clip_score(prediction_raw)
         prediction_rounded = round_half(prediction_clipped)
 
-        component_raw_scores[target_name] = prediction_clipped
-        component_scores[target_name] = prediction_rounded
+        raw_scores[target_name] = prediction_raw
+        clipped_scores[target_name] = prediction_clipped
+        rounded_scores[target_name] = prediction_rounded
 
         output["scores"][f"{target_name}_score"] = round(
             float(prediction_rounded),
@@ -545,38 +890,91 @@ def predict_scores_with_shap_from_features(
             4,
         )
 
+        output["model_raw_scores"][f"{target_name}_score"] = round(
+            float(prediction_raw),
+            4,
+        )
+
+        shap_by_model[target_name] = make_linear_shap_dict(
+            target_name=target_name,
+            model=model,
+            X=X_target,
+            prediction_raw=prediction_raw,
+            prediction_clipped=prediction_clipped,
+            prediction_rounded=prediction_rounded,
+        )
+
+        output["shap"][target_name] = shap_by_model[target_name]
+
     # ============================================
-    # CALCULATE OVERALL SCORE
+    # CALCULATE GRAMMAR BY FORMULA
+    # Use clipped model scores to keep score range stable.
     # ============================================
 
-    overall_raw = (
-        component_scores["fluency"]
-        + component_scores["lexical"]
-        + component_scores["pronunciation"]
-        + component_scores["grammar"]
-    ) / 4
+    grammar_raw_unclipped = (
+        clipped_scores["overall"] * 4
+        - clipped_scores["fluency"]
+        - clipped_scores["lexical"]
+        - clipped_scores["pronunciation"]
+    )
 
-    overall_clipped = clip_score(overall_raw)
-    overall_rounded = round_half(overall_clipped)
+    grammar_clipped = clip_score(grammar_raw_unclipped)
+    grammar_rounded = round_half(grammar_clipped)
 
-    output["scores"]["overall_score"] = round(
-        float(overall_rounded),
+    output["scores"]["grammar_score"] = round(
+        float(grammar_rounded),
         1,
     )
 
-    output["raw_scores"]["overall_score"] = round(
-        float(overall_clipped),
+    output["raw_scores"]["grammar_score"] = round(
+        float(grammar_clipped),
+        4,
+    )
+
+    output["model_raw_scores"]["grammar_score"] = round(
+        float(grammar_raw_unclipped),
         4,
     )
 
     # ============================================
-    # OVERALL EXPLANATION
+    # SHAP-LIKE EXPLANATION FOR GRAMMAR
     # ============================================
 
-    output["shap"]["overall"] = _make_overall_average_shap_dict(
-        component_scores=component_scores,
-        overall_raw=overall_raw,
-        overall_rounded=overall_rounded,
+    output["shap"]["grammar"] = make_formula_grammar_shap_dict(
+        shap_by_model=shap_by_model,
+        grammar_raw_unclipped=grammar_raw_unclipped,
+        grammar_clipped=grammar_clipped,
+        grammar_rounded=grammar_rounded,
+    )
+
+    output["shap"]["grammar_components"] = make_grammar_components_shap_dict(
+        clipped_scores=clipped_scores,
+        grammar_raw_unclipped=grammar_raw_unclipped,
+        grammar_clipped=grammar_clipped,
+        grammar_rounded=grammar_rounded,
     )
 
     return output
+
+
+# ============================================
+# ALIAS FOR OLD IMPORTS
+# ============================================
+
+def predict_scores_from_features(
+    fluency_data: Dict[str, Any],
+    lexical_cefr: Dict[str, Any],
+    lexical_diversity: Dict[str, Any],
+    pronunciation_data: Dict[str, Any],
+    grammar_data: Optional[Dict[str, Any]] = None,
+) -> dict:
+    """
+    Alias if other files still import predict_scores_from_features.
+    """
+    return predict_scores_with_shap_from_features(
+        fluency_data=fluency_data,
+        lexical_cefr=lexical_cefr,
+        lexical_diversity=lexical_diversity,
+        pronunciation_data=pronunciation_data,
+        grammar_data=grammar_data,
+    )

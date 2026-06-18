@@ -5,8 +5,5 @@
     "lexical_advanced",
     "pron_bad",
     "pron_good",
-    "pron_neural",
-    "gram_ratio_error",
-    "gram_total_errors",
-    "gram_error_rate"
+    "pron_neutral"
 ]
