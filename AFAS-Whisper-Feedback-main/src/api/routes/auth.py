@@ -2,14 +2,13 @@
 API route for authentication.
 """
 
-from ast import Store
-from hmac import new
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.core.database import get_db
 from src.core.models import User, RefreshToken
 from src.schemas.login import LoginRequest, TokenResponse, RegisterRequest, RefreshRequest
-from src.auth.auth import verify_password, create_access_token, hash_password, TokenType, decode_access_token
+from src.auth.auth import verify_password, create_access_token, hash_password, create_refresh_token, decode_refresh_token
+import datetime
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -47,11 +46,16 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Invalid username or password")
 
     access_token = create_access_token(user_id=user.id, username=user.username)
-    refresh_token = create_access_token(user_id=user.id, username=user.username, token_type=TokenType.REFRESH)
+    refresh_token = create_refresh_token(user_id=user.id, username=user.username)
+
+    refresh_token_dict = decode_refresh_token(refresh_token)
 
     new_refresh_token = RefreshToken(
         user_id=user.id,
-        refresh_token=refresh_token
+        session_id=refresh_token_dict.get("session_id"),
+        count=refresh_token_dict.get("count"),
+        created_at=datetime.datetime.fromtimestamp(refresh_token_dict.get("iat")),
+        expired_at=datetime.datetime.fromtimestamp(refresh_token_dict.get("exp"))
     )
 
     db.add(new_refresh_token)
@@ -66,21 +70,16 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
-    try:
-        req = decode_access_token(payload.refresh_token)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
-            headers={"WWW-Authenticate": "Bearer"}
-        ) from exc
+    req = decode_refresh_token(payload.refresh_token)
 
     user_id = req.get("sub")
+    session_id = req.get("session_id")
+    count = req.get("count")
     username = req.get("username")
-    if user_id is None or username is None:
+    if user_id is None or session_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload: missing user ID or username",
+            detail="Invalid token payload: missing user ID",
             headers={"WWW-Authenticate": "Bearer"}
         )
 
@@ -93,16 +92,25 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"}
         ) from exc
 
-    storedToken = db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
+    storedToken = db.query(RefreshToken).filter(RefreshToken.session_id == session_id).first()
 
-    if not storedToken or storedToken.refresh_token != payload.refresh_token:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    if not storedToken:
+        raise HTTPException(status_code=403, detail="Invalid session")
+
+    if storedToken.user_id != user_id or storedToken.count != count or storedToken.expired_at < datetime.datetime.now():
+        db.delete(storedToken)
+        db.commit()
+        raise HTTPException(status_code=403, detail="Invalid session")
 
     access_token = create_access_token(user_id=user_id, username=username)
-    refresh_token = create_access_token(user_id=user_id, username=username, token_type=TokenType.REFRESH)
+    refresh_token = create_refresh_token(user_id=user_id, username=username, session_id=session_id, count=count + 1)
 
-    storedToken.refresh_token = refresh_token
-    
+    refresh_token_dict = decode_refresh_token(refresh_token)
+
+    storedToken.count = count + 1
+    storedToken.created_at=datetime.datetime.fromtimestamp(refresh_token_dict.get("iat"))
+    storedToken.expired_at=datetime.datetime.fromtimestamp(refresh_token_dict.get("exp"))
+
     db.commit()
     db.refresh(storedToken)
 
