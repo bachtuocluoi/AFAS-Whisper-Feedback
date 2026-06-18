@@ -543,7 +543,74 @@ print("\nNumber of rows after merge:", len(overall_df))
 
 
 # ============================================
-# 12. DEFINE FEATURES FOR EACH MODEL
+# 12. CONVERT RAW FEATURES TO NUMERIC BEFORE ENGINEERING
+# ============================================
+
+raw_feature_cols = [
+    # Fluency
+    "flu_speech_rate",
+    "flu_pause_ratio",
+
+    # Lexical
+    "lex_TTR",
+    "lex_MSTTR",
+    "lex_A1",
+    "lex_A2",
+    "lex_B1",
+    "lex_B2",
+    "lex_C1",
+
+    # Pronunciation
+    "pro_0%-50%",
+    "pro_50%-70%",
+    "pro_70%-85%",
+    "pro_85%-95%",
+    "pro_95%-100%",
+
+    # Grammar
+    "gram_ratio_error",
+    "gram_total_errors",
+    "gram_error_rate",
+]
+
+for col in raw_feature_cols:
+    if col not in overall_df.columns:
+        raise ValueError(f"Missing raw feature column: {col}")
+
+    overall_df[col] = to_numeric_clean(overall_df[col])
+
+
+# ============================================
+# 13. CREATE ENGINEERED FEATURES
+# ============================================
+
+# Lexical feature giống code chị đã thử:
+# lexical_advanced = B1 + 2*B2 + 3*C1
+overall_df["lexical_advanced"] = (
+    overall_df["lex_B1"]
+    + 2 * overall_df["lex_B2"]
+    + 3 * overall_df["lex_C1"]
+)
+
+# Pronunciation feature giống code chị đã thử:
+# bad = 2*(0-50%) + (50-70%)
+# good = (85-95%) + 2*(95-100%)
+# neural = 70-85%
+overall_df["pron_bad"] = (
+    2 * overall_df["pro_0%-50%"]
+    + overall_df["pro_50%-70%"]
+)
+
+overall_df["pron_good"] = (
+    overall_df["pro_85%-95%"]
+    + 2 * overall_df["pro_95%-100%"]
+)
+
+overall_df["pron_neural"] = overall_df["pro_70%-85%"]
+
+
+# ============================================
+# 14. DEFINE FEATURES FOR EACH MODEL
 # ============================================
 
 fluency_features = [
@@ -552,21 +619,14 @@ fluency_features = [
 ]
 
 lexical_features = [
-    "lex_TTR",
     "lex_MSTTR",
-    "lex_A1",
-    "lex_A2",
-    "lex_B1",
-    "lex_B2",
-    "lex_C1",
+    "lexical_advanced",
 ]
 
 pronunciation_features = [
-    "pro_0%-50%",
-    "pro_50%-70%",
-    "pro_70%-85%",
-    "pro_85%-95%",
-    "pro_95%-100%",
+    "pron_bad",
+    "pron_good",
+    "pron_neural",
 ]
 
 grammar_features = [
@@ -575,6 +635,9 @@ grammar_features = [
     "gram_error_rate",
 ]
 
+# Overall không train model riêng nữa.
+# Overall sẽ được tính ở backend:
+# overall = (fluency + lexical + pronunciation + grammar) / 4
 overall_features = (
     fluency_features
     + lexical_features
@@ -587,7 +650,6 @@ targets = {
     "lexical": target_columns["lexical"],
     "pronunciation": target_columns["pronunciation"],
     "grammar": target_columns["grammar"],
-    "overall": target_columns["overall"],
 }
 
 features_by_model = {
@@ -595,12 +657,11 @@ features_by_model = {
     "lexical": lexical_features,
     "pronunciation": pronunciation_features,
     "grammar": grammar_features,
-    "overall": overall_features,
 }
 
 
 # ============================================
-# 13. CHECK REQUIRED COLUMNS
+# 15. CHECK REQUIRED COLUMNS
 # ============================================
 
 required_cols = list(
@@ -616,13 +677,13 @@ missing_cols = [
 
 if missing_cols:
     raise ValueError(
-        "Missing required columns after merge: "
+        "Missing required columns after merge / feature engineering: "
         + ", ".join(missing_cols)
     )
 
 
 # ============================================
-# 14. CONVERT FEATURES TO NUMERIC + FILL NA
+# 16. CONVERT ENGINEERED FEATURES TO NUMERIC + FILL NA
 # ============================================
 
 feature_medians = {}
@@ -642,7 +703,7 @@ for col in overall_features:
 
 
 # ============================================
-# 15. CONVERT TARGETS TO NUMERIC
+# 17. CONVERT TARGETS TO NUMERIC
 # ============================================
 
 for target_name, target_column in targets.items():
@@ -650,7 +711,7 @@ for target_name, target_column in targets.items():
 
 
 # ============================================
-# 16. SAVE FEATURE CONFIGURATION FOR BACKEND
+# 18. SAVE FEATURE CONFIGURATION FOR BACKEND
 # ============================================
 
 feature_columns_path = MODEL_DIR / "feature_columns.json"
@@ -678,7 +739,7 @@ print("Saved feature medians to:", feature_medians_path)
 
 
 # ============================================
-# 17. PREPARE 5-FOLD CROSS VALIDATION
+# 19. PREPARE 5-FOLD CROSS VALIDATION
 # ============================================
 
 kf = KFold(
@@ -693,7 +754,7 @@ all_cv_coefficients = []
 
 
 # ============================================
-# 18. RUN 5-FOLD CROSS VALIDATION
+# 20. RUN 5-FOLD CROSS VALIDATION
 # ============================================
 
 print("\n===== START 5-FOLD CROSS VALIDATION =====")
@@ -722,7 +783,10 @@ for target_name, target_column in targets.items():
     r2s = []
     qwks = []
 
-    for fold, (train_idx, test_idx) in enumerate(kf.split(X_target), start=1):
+    for fold, (train_idx, test_idx) in enumerate(
+        kf.split(X_target),
+        start=1,
+    ):
         X_train = X_target.iloc[train_idx]
         X_test = X_target.iloc[test_idx]
 
@@ -790,7 +854,6 @@ for target_name, target_column in targets.items():
             "QWK_std": np.nanstd(qwks),
         }
     )
-
 
 # ============================================
 # 19. EXPORT CV RESULTS

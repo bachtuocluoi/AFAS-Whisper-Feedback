@@ -6,18 +6,11 @@
     "features": [
         "flu_speech_rate",
         "flu_pause_ratio",
-        "lex_TTR",
         "lex_MSTTR",
-        "lex_A1",
-        "lex_A2",
-        "lex_B1",
-        "lex_B2",
-        "lex_C1",
-        "pro_0%-50%",
-        "pro_50%-70%",
-        "pro_70%-85%",
-        "pro_85%-95%",
-        "pro_95%-100%",
+        "lexical_advanced",
+        "pron_bad",
+        "pron_good",
+        "pron_neural",
         "gram_ratio_error",
         "gram_total_errors",
         "gram_error_rate"
@@ -28,41 +21,15 @@
             "flu_pause_ratio"
         ],
         "lexical": [
-            "lex_TTR",
             "lex_MSTTR",
-            "lex_A1",
-            "lex_A2",
-            "lex_B1",
-            "lex_B2",
-            "lex_C1"
+            "lexical_advanced"
         ],
         "pronunciation": [
-            "pro_0%-50%",
-            "pro_50%-70%",
-            "pro_70%-85%",
-            "pro_85%-95%",
-            "pro_95%-100%"
+            "pron_bad",
+            "pron_good",
+            "pron_neural"
         ],
         "grammar": [
-            "gram_ratio_error",
-            "gram_total_errors",
-            "gram_error_rate"
-        ],
-        "overall": [
-            "flu_speech_rate",
-            "flu_pause_ratio",
-            "lex_TTR",
-            "lex_MSTTR",
-            "lex_A1",
-            "lex_A2",
-            "lex_B1",
-            "lex_B2",
-            "lex_C1",
-            "pro_0%-50%",
-            "pro_50%-70%",
-            "pro_70%-85%",
-            "pro_85%-95%",
-            "pro_95%-100%",
             "gram_ratio_error",
             "gram_total_errors",
             "gram_error_rate"
@@ -72,15 +39,13 @@
         "fluency": "avg_fluency",
         "lexical": "avg_lexical",
         "pronunciation": "avg_pronunciation",
-        "grammar": "avg_grammar",
-        "overall": "avg_overall"
+        "grammar": "avg_grammar"
     },
     "saved_models": {
         "fluency": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\fluency_score_model_linear.pkl",
         "lexical": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\lexical_score_model_linear.pkl",
         "pronunciation": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\pronunciation_score_model_linear.pkl",
-        "grammar": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\grammar_score_model_linear.pkl",
-        "overall": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\overall_score_model_linear.pkl"
+        "grammar": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\grammar_score_model_linear.pkl"
     },
     "saved_config_files": {
         "feature_columns": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_columns.json",
