@@ -1,8 +1,9 @@
 FROM python:3.11-slim
 
-# ffmpeg is required by openai-whisper for audio decoding
+# ffmpeg for openai-whisper; default-jre-headless for language_tool_python
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
