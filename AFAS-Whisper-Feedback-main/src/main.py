@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.database import engine, Base
 from src.core import models
+from src.core.migrations import run_migrations
 from src.api.routes import api_router
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -16,8 +17,9 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from src.create_queue import asr_queue
 
-# Create database tables
+# Create database tables, then apply any pending schema migrations
 Base.metadata.create_all(bind=engine)
+run_migrations(engine)
 
 
 
