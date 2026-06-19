@@ -3,9 +3,9 @@ Lightweight schema migration runner.
 
 Add new entries to MIGRATIONS (in order). Each migration runs exactly once —
 tracked in the `schema_migrations` table. Safe to re-run on startup: applied
-migrations are skipped, and ADD COLUMN statements that already exist are
-silently marked as applied (handles fresh DBs where create_all already built
-the column).
+migrations are skipped, and errors listed in a migration's `safe_errors` are
+silently recorded (handles fresh DBs where create_all already built the column,
+or RENAME operations where the column is already in its target state).
 """
 
 import logging
@@ -13,6 +13,9 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 logger = logging.getLogger(__name__)
+
+# Default errors that mean "already done" for ADD COLUMN statements.
+_DEFAULT_SAFE = ["duplicate column", "already exists"]
 
 MIGRATIONS = [
     {
@@ -23,6 +26,15 @@ MIGRATIONS = [
         "id": "002_add_grammar_score_to_scores",
         "sql": "ALTER TABLE scores ADD COLUMN grammar_score REAL",
     },
+    {
+        "id": "003_add_shap_values_to_scores",
+        "sql": "ALTER TABLE scores ADD COLUMN shap_values TEXT",
+    },
+    # Add future migrations below, e.g.:
+    # {
+    #     "id": "004_add_foo_to_bar",
+    #     "sql": "ALTER TABLE bar ADD COLUMN foo TEXT",
+    # },
 ]
 
 
@@ -42,13 +54,13 @@ def run_migrations(engine: Engine) -> None:
             if already:
                 continue
 
+            safe_errors = migration.get("safe_errors", _DEFAULT_SAFE)
             try:
                 conn.execute(text(migration["sql"]))
             except Exception as exc:
                 err = str(exc).lower()
-                # Fresh DB: create_all already added the column — just record it.
-                if "duplicate column" in err or "already exists" in err:
-                    logger.debug("Migration %s: already applied outside runner, recording.", mid)
+                if any(s in err for s in safe_errors):
+                    logger.debug("Migration %s: already applied, recording.", mid)
                 else:
                     raise
 
