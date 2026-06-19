@@ -863,16 +863,9 @@ def predict_scores_with_shap_from_features(
             target_name=target_name,
         )
 
-        if target_name == "fluency":
-            print("\n===== DEBUG FLUENCY =====")
-            print("fluency_data:", fluency_data)
-            print("X_target:")
-            print(X_target)
 
         prediction_raw = float(model.predict(X_target)[0])
 
-        if target_name == "fluency":
-            print("fluency raw prediction:", prediction_raw)
         prediction_clipped = clip_score(prediction_raw)
         prediction_rounded = round_half(prediction_clipped)
 

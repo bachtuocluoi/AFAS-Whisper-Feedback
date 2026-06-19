@@ -14,15 +14,31 @@ function parseJwt(token) {
     return JSON.parse(jsonPayload);
 }
 
-function loadUser() {
+async function loadUser() {
+    let token = localStorage.getItem("access_token");
+
     if (!token) {
         alert("User not login. Please login first");
         window.location.href = "/view/login.html";
         return;
     }
-    if (parseJwt(token).exp < Date.now() / 1000) {
+
+    const payload = parseJwt(token);
+
+    if (!payload || !payload.exp) {
         handleUnauthorized();
+        return null;
     }
+
+    // Access token hết hạn thì refresh, không logout ngay
+    if (payload.exp < Date.now() / 1000) {
+        token = await getRefreshToken();
+
+        if (!token) {
+            return null;
+        }
+    }
+
     return token;
 }
 
@@ -38,9 +54,13 @@ function handleUnauthorized() {
 }
 
 async function getRefreshToken() {
-    if (!refresh_token) {
+    const refreshToken = localStorage.getItem("refresh_token");
+
+    if (!refreshToken) {
         handleUnauthorized();
+        return null;
     }
+
     try {
         const response = await fetch(BACKEND_BASE_URL + "/api/v1/auth/refresh", {
             method: "POST",
@@ -48,20 +68,27 @@ async function getRefreshToken() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                refresh_token: refresh_token,
+                refresh_token: refreshToken
             })
         });
 
         const data = await response.json();
 
+        if (!response.ok) {
+            console.error("Refresh token failed:", data);
+            handleUnauthorized();
+            return null;
+        }
+
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
 
-        token = data.access_token;
-        refresh_token = data.refresh_token;
+        return data.access_token;
+
     } catch (error) {
+        console.error("Refresh token error:", error);
         handleUnauthorized();
-        console.error(error);
+        return null;
     }
 }
 
