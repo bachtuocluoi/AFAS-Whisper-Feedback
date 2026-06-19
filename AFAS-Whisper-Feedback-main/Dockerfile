@@ -11,8 +11,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download Whisper base.en model so the first request isn't slow
-RUN python -c "import whisper; whisper.load_model('base.en')"
+# Pre-download Whisper small.en model so the first request isn't slow
+RUN python -c "import whisper; whisper.load_model('small.en')"
 
 COPY . .
 
