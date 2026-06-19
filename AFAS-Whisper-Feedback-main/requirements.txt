@@ -24,6 +24,12 @@ requests>=2.31.0
 # Grammar
 language_tool_python>=2.7.1
 
+# ML / scoring
+joblib>=1.3.0
+scikit-learn>=1.3.0
+shap>=0.44.0
+matplotlib>=3.8.0
+
 #Auth
 passlib>=1.7.4
 authlib>=1.6.11
