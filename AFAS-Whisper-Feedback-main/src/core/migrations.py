@@ -19,11 +19,10 @@ MIGRATIONS = [
         "id": "001_add_grammar_id_to_feedback",
         "sql": "ALTER TABLE feedback ADD COLUMN grammar_id INTEGER",
     },
-    # Add future migrations here, e.g.:
-    # {
-    #     "id": "002_add_foo_to_bar",
-    #     "sql": "ALTER TABLE bar ADD COLUMN foo TEXT",
-    # },
+    {
+        "id": "002_add_grammar_score_to_scores",
+        "sql": "ALTER TABLE scores ADD COLUMN grammar_score REAL",
+    },
 ]
 
 
