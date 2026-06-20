@@ -224,6 +224,7 @@ function renderShapTable() {
 
 function goBackUpload() {
     localStorage.removeItem("submit_id");
+    localStorage.removeItem("ques_id");
     window.location.href = "/view/upload.html";
 }
 
@@ -234,6 +235,7 @@ function goBackResult() {
 }
 
 function goToHomepage() {
+    localStorage.removeItem("ques_id");
     window.location.href = "/view/homepage.html";
 }
 
