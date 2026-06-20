@@ -209,7 +209,7 @@ body {
 
 .score-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
 
     gap: 16px;
 }
@@ -233,19 +233,25 @@ body {
 
 /* Light blue */
 .fluency-box {
-    background-color: var(--score-blue-soft);
-    color: var(--score-slate);
+    background-color: rgb(87, 157, 172);
+    color: white;
 }
 
 /* Soft green */
 .lexical-box {
-    background-color: var(--score-green-soft);
-    color: var(--score-slate);
+    background-color: rgb(84, 143, 126);
+    color: white;
 }
 
 /* Dark slate */
 .pronunciation-box {
     background-color: var(--score-slate);
+    color: white;
+}
+
+/* Dark slate */
+.grammar-box {
+    background-color: rgb(151, 171, 206);
     color: white;
 }
 

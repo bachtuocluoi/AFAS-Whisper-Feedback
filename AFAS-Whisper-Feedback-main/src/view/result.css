@@ -23,6 +23,8 @@
     --result-slate: #334e57;
     --result-slate-soft: #5d747b;
 
+    --result-green-dark: #4DB6AC;
+
     /* Neutral colors */
     --result-background: #f4f8f8;
     --result-card: rgba(255, 255, 255, 0.94);
@@ -253,6 +255,10 @@ body {
 
 .pronunciation-icon {
     background-color: var(--result-pink-dark);
+}
+
+.grammar-icon {
+    background-color: var(--result-green-dark);
 }
 
 /* =========================================================
