@@ -47,22 +47,22 @@
         "formula": "grammar = overall * 4 - fluency - lexical - pronunciation"
     },
     "saved_models": {
-        "fluency": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\fluency_score_model_linear.pkl",
-        "lexical": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\lexical_score_model_linear.pkl",
-        "pronunciation": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\pronunciation_score_model_linear.pkl",
-        "overall": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\overall_score_model_linear.pkl"
+        "fluency": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/fluency_score_model_linear.pkl",
+        "lexical": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/lexical_score_model_linear.pkl",
+        "pronunciation": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/pronunciation_score_model_linear.pkl",
+        "overall": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/overall_score_model_linear.pkl"
     },
     "saved_config_files": {
-        "feature_columns_by_model": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_columns_by_model.json",
-        "feature_medians": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_medians.json",
-        "overall_feature_columns": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\feature_columns.json",
-        "background_data": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\ml_models\\linear_regression_background_data.csv"
+        "feature_columns_by_model": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/feature_columns_by_model.json",
+        "feature_medians": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/feature_medians.json",
+        "overall_feature_columns": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/feature_columns.json",
+        "background_data": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/ml_models/linear_regression_background_data.csv"
     },
     "saved_output_files": {
-        "cv_metrics_by_fold": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_cv_metrics_by_fold.csv",
-        "cv_metrics_summary": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_cv_metrics_summary.csv",
-        "cv_predictions": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_predictions_cv.csv",
-        "cv_coefficients": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_coefficients_cv.csv",
-        "final_coefficients": "D:\\ASR\\AFAS-Whisper-Feedback\\AFAS-Whisper-Feedback-main\\outputs\\linear_regression_coefficients_final.csv"
+        "cv_metrics_by_fold": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/outputs/linear_regression_cv_metrics_by_fold.csv",
+        "cv_metrics_summary": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/outputs/linear_regression_cv_metrics_summary.csv",
+        "cv_predictions": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/outputs/linear_regression_predictions_cv.csv",
+        "cv_coefficients": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/outputs/linear_regression_coefficients_cv.csv",
+        "final_coefficients": "/home/lenovo/Documents/Project/AFAS-Whisper-Feedback/AFAS-Whisper-Feedback-main/outputs/linear_regression_coefficients_final.csv"
     }
 }

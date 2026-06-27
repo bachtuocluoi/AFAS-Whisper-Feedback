@@ -2,11 +2,21 @@ services:
   app:
     build: .
     ports:
-      - "8000:8000"
+      - "8100:8100"
     volumes:
       - db-data:/app/db
     environment:
       - DATABASE_URL=sqlite:////app/db/asr.db
+      - BACKEND_BASE_URL=http://127.0.0.1:8100
+      - DATABASE_URL=sqlite:///./asr.db
+      - WHISPER_MODEL=small.en
+      - PAUSE_THRESHOLD=0.25
+      - MSTTR_SEGMENT_SIZE=50
+      - CEFR_DICT_PATH=data/oxford_cerf.csv
+      - SECRET_KEY="itosHi30anata04Ni02todoke06inoribana5Kurushimi@mo25itami#mo10*zenbuainikaete"
+      - JWT_ALG=HS256
+      - ACCESS_TOKEN_EXPIRE_SECONDS=3600
+      - REFRESH_TOKEN_EXPIRE_SECONDS= 604800
     restart: unless-stopped
 
 volumes:

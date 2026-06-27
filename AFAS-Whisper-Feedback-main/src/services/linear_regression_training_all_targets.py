@@ -227,7 +227,6 @@ def create_model():
     """
     return Pipeline(
         steps=[
-            ("scaler", StandardScaler()),
             ("regressor", LinearRegression()),
         ]
     )
@@ -663,8 +662,8 @@ def augment_fluency_train_df(df_input):
     df2[targets["fluency"]] = df2[targets["fluency"]] + 0.5
 
     df3 = df_input.copy()
-    df3["flu_pause_ratio"] = df3["flu_pause_ratio"] + 0.05
-    df3[targets["fluency"]] = df3[targets["fluency"]] + 0.5
+    df3["flu_pause_ratio"] = df3["flu_pause_ratio"] + 0.1
+    df3[targets["fluency"]] = df3[targets["fluency"]] + 1
 
     df_aug = pd.concat(
         [df_base, df2, df3],
