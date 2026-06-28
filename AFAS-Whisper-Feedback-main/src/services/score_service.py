@@ -39,7 +39,7 @@ def round_half(score: float) -> float:
     score = float(score)
     score = max(0.0, min(9.0, score))
 
-    return math.floor(score * 2 + 0.5 + 1e-12) / 2
+    return math.floor(score * 2 + 1 + 1e-12) / 2
 
 
 def clip_score(score: float) -> float:
